@@ -5,24 +5,22 @@
 #'
 #' The function mosaics the imagery in the \code{src} folder. The folder can
 #' hold GTiff images from several tiles, dates and bands. When only a subset
-#' of bands or dates has to be mosaicked, the band names or dates should be
-#' provided through the argument \code{bFilter} or \code{dayFilter}. Band
-#' names are defined by the letter “b” and the two-digit band number (e.g., 
-#' ‘b01’). The dates must be provided as a \code{Date} class object. Once
-#' mosaicked, the images can be cropped to fit the \code{extent} (optional).
-#' The \code{extent} can be defined in any coordinate reference system, since
-#' \code{senMosaic} automatically reproject the extent to match the projection
-#' of the image. The outputs will be placed in the \code{AppRoot} directory,
-#' under the folder named as \code{out.name}. If no name is provided, the 
-#' folder is named “outfile”. To use \code{gutils = TRUE}, a proper installation
-#' of `GDAL' is required. This method is faster than the native `R' functions.
-#'
+#' dates has to be mosaicked, the dates should be provided through the argument
+#' \code{dates}. The dates must be provided as a \code{Date} class object.For
+#' further details about the \code{bFilter} argument, go to the 
+#' \code{\link{senDownload}} function. Once mosaicked, the images can be cropped
+#' to fit the \code{region} (optional). The \code{region} can be defined in any
+#' coordinate reference system, since \code{senMosaic} automatically reproject
+#' the extent to match the projection of the image. The outputs will be placed
+#' in the \code{AppRoot} directory, under the folder named as \code{out.name}.
+#' If no name is provided, the folder is named “outfile”. 
+#' 
 #' @param src the path of the folder with the Sentinel images in GTiff format.
 #' @param AppRoot the directory to save the mosaicked images.
 #' @param out.name the name of the folder that stores the outputs. By default,
 #' “outfile” is assigned.
-#' @param extent  an \code{extent}, \code{Raster*}, or \code{Spatial*} object
-#' representing the region of interest.
+#' @param region a \code{Spatial*}, projected \code{raster*}, or \code{sf} class object 
+#' defining the area of interest.
 #' @param overwrite logical argument. If \code{TRUE}, overwrites the existing
 #' images with the same name.
 #' @param gutils logical argument. If \code{TRUE}, the function uses `GDAL' 
@@ -32,51 +30,55 @@
 #' @param ... arguments for nested functions:
 #'  \itemize{
 #'   \item \code{pathrow} a \code{list} of vectors with the path and row numbers
-#'   of the tiles concerning the region of interest.
+#'   of the tiles concerning the region of interest. This argument is mandatory
+#'   if \code{region} is not defined.
 #'   \item \code{bFilter} a vector with the bands to be mosaicked. If not
 #'   supplied, all bands are mosaicked.
-#'   \item \code{dayFilter} a vector with the capturing dates being considered
+#'   \item \code{dates} a vector with the capturing dates being considered
 #'   for mosaicking. If not supplied, all dates are mosaicked.
 #' }
+#' @return this function does not return anything. It saves the imagery in the
+#'  \code{AppRoot} directory.
 #' @examples
 #' \dontrun{
 #' # load a spatial polygon object of Navarre
 #' data(ex.navarre)
 #' # main output directory
-#' src <- paste0(tempdir(),"/Path_for_downloading_folder")
-#' print(src)
+#' wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+#' print(wdir)
 #' # download Sentinel-2 images
-#' senDownload(startDate = as.Date("2018210", "%Y%j"),
-#'             endDate = as.Date("2018218", "%Y%j"),
-#'             platform = "Sentinel-2",
-#'             extent = ex.navarre,
-#'             product = "S2MSI1C",
-#'             pathrow = c("R094"),
-#'             username = "username",
-#'             password = "password",
-#'             AppRoot = src)
+#' senDownSearch(startDate = as.Date("2018210", "%Y%j"),
+#'               endDate = as.Date("2018218", "%Y%j"),
+#'               platform = "Sentinel-2",
+#'               extent = ex.navarre,
+#'               product = "S2MSI1C",
+#'               pathrow = c("R094"),
+#'               username = "username",
+#'               password = "password",
+#'               AppRoot = wdir)
 #' # folder with the unzipped images
-#' src.sen <- file.path(src, "Sentinel-2")
-#' src.unzip <- file.path(src.sen, "unzip")
+#' wdir.sen <- file.path(wdir, "Sentinel-2")
+#' wdir.sen.unzip <- file.path(wdir.sen, "unzip")
 #' # mosaic the Sentinel-2 images
-#' senMosaic(src.unzip,
-#'           AppRoot = src.sen,
+#' senMosaic(wdir.sen.unzip,
+#'           AppRoot = wdir.sen,
 #'           gutils = TRUE,
 #'           out.name = "Navarre")
-#' 
+#'           
+#' wdir.sen <- file.path(wdir.sen,"Navarre")
 #' # load and plot a Sentinel-2 image
-#' files <- list.files(src.sen, pattern = "\\.tif$", full.names = TRUE ,recursive = TRUE)
+#' files.sen <- list.files(wdir.sen, pattern = "\\.tif$", full.names = TRUE ,recursive = TRUE)
 #' # print Sentinel-2 bands
 #' getRGISToolsOpt("SEN2BANDS")
-#' file.rgb <- stack(files[grepl("TCI",files)][1])
-#' plotRGB(file.rgb)
+#' file.sen.rgb <- stack(files.sen[grepl("TCI",files.sen)][1])
+#' plotRGB(file.sen.rgb)
 #' }
 senMosaic<-function(src,
                     AppRoot,
-                    extent=NULL,
+                    region=NULL,
                     out.name="outfile",
                     verbose=FALSE,
-                    gutils=FALSE,
+                    gutils=TRUE,
                     overwrite=FALSE,
                     ...){
   arg<-list(...)
@@ -84,13 +86,13 @@ senMosaic<-function(src,
   AppRoot<-pathWinLx(AppRoot)
   #read all folder names to get all the days
   imgFolders<-list.files(src,full.names = TRUE)
-  if(length(imgFolders)==0)stop(paste0("There is no images in ",src," path."))
+  if(length(imgFolders)==0)stop(paste0("No images found in ",src," path."))
   dates<-unique(senGetDates(imgFolders))
   bpath<-file.path(AppRoot,out.name)
 
   #filter dates
-  if("dayFilter"%in%names(arg)){
-    dates<-dates[dates%in%arg$dayFilter]
+  if("dates"%in%names(arg)){
+    dates<-dates[dates%in%arg$dates]
   }
 
   for(d in 1:length(dates)){
@@ -150,37 +152,45 @@ senMosaic<-function(src,
                 stop(cond)
               }
             })
-          if(!is.null(extent)){
-            if(class(extent)!="Extent")
-              extent<-spTransform(extent,crs(img))
-            img<-crop(img,extent)
+          if(!is.null(region)){
+            region<-transform_multiple_proj(region)
+            #TODO remove as spatial using raster v3 package
+            c_region<-as(region, 'Spatial')
+            img<-crop(img,c_region)
+            if("cutline"%in%names(arg)){
+              img<-mask(img,c_region)
+            }
           }
           writeRaster(img,out.file.path,overwrite=overwrite)
         }else{
           #mosaic with gdalutils no support cutline
-          message(paste0("Merging band ",dtype[dt]))
-          if(is.null(extent)){
-            mosaic_rasters(typechunks,
-                           dst_dataset=out.file.path,
-                           srcnodata=0,
-                           vrtnodata=0,
-                           overwrite=overwrite)
+           message(paste0("Merging band ",dtype[dt]))
+          if(is.null(region)){
+            temp<-gsub(".tif","_temp.vrt",out.file.path,fixed = TRUE)
+            genMosaicGdalUtils(typechunks=typechunks,
+                               temp=temp,
+                               nodata=0,
+                               out.name=out.file.path)
           }else{
-            ext<-extent(extent)
-            temp<-gsub(".tif","_temp.tif",out.file.path)
-            mosaic_rasters(typechunks,
-                           dst_dataset=temp,
-                           srcnodata=0,
-                           vrtnodata=0,
-                           overwrite=TRUE)
-            gdalwarp(srcfile=temp,
-                     dstfile=out.file.path,
-                     te=c(ext@xmin,ext@ymin,ext@xmax,ext@ymax),
-                     te_srs=proj4string(extent),
-                     overwrite=overwrite)
-            file.remove(temp)
+            
+            ext<-extent(region)
+            temp<-gsub(".tif","_temp.vrt",out.file.path,fixed = TRUE)
+            
+            out.tmp<-gsub(".tif","_temp.tif",out.file.path,fixed = TRUE)
+            genMosaicGdalUtils(typechunks=typechunks,
+                               temp=temp,
+                               nodata=0,
+                               out.name=out.tmp)
+            
+            gdal_utils(util = "warp", 
+                       source =out.tmp,
+                       destination = out.file.path,
+                       options=c("-te",ext@xmin,ext@ymin,ext@xmax,ext@ymax,"-te_srs",st_crs(region)$proj4string)
+            )
+
+            suppressWarnings(file.remove(out.tmp, showWarnings = FALSE))
           }
-        }
+      }
       }else{
         if(verbose){
           warning("File exists! not mergin...")

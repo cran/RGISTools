@@ -5,7 +5,7 @@
 \title{Convert an HDF file into a set of GTiff files}
 \usage{
 modExtractHDF(filesHDF, AppRoot, overwrite = FALSE, bFilter = NULL,
-  rm.band = NULL, shp = NULL, verbose = FALSE, ...)
+  rm.band = NULL, region = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{filesHDF}{the full path where the HDF files are located.}
@@ -20,12 +20,17 @@ images with the same name.}
 \item{rm.band}{a vector containing the names of the bands excluded from the
 extraction.}
 
-\item{shp}{the path to shape file of the area of interest in the hard drive.}
+\item{region}{a \code{Spatial*}, projected \code{raster*}, or \code{sf*} class object 
+defining the area of interest for image masking.}
 
 \item{verbose}{logical argument. If \code{TRUE}, the function prints the 
 running steps and warnings.}
 
-\item{...}{arguments for nested functions.}
+\item{...}{arguments for nested functions.
+\itemize{
+       \item \code{dates} a vector with the capturing dates being considered
+  for downloading. 
+}}
 }
 \description{
 \code{modExtractHDF} converts the original format of MODIS images (hierarchical
@@ -45,32 +50,31 @@ using the `\code{raster}' package.
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
-src.mod <- file.path(src, "Modis","MOD11A1")
-src.mod.hdf <- file.path(src.mod, "hdf")
-img.list <- modSearch(product = "MOD11A1",
-                      startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                      endDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                      collection = 6,
-                      extent = ex.navarre,
-                      AppRoot = src.mod.hdf)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
+wdir.mod <- file.path(wdir, "Modis","MOD11A1")
+sres <- modSearch(product = "MOD11A1",
+                  startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  collection = 6,
+                  extent = ex.navarre)
                       
 # download the images of the list
-src.mod <- file.path(src, "Modis", "MOD11A1")
-modDownSearch(searchres = img.list, 
-              username = "username", 
-              password = "password",
-              AppRoot = src.mod.hdf)
+wdir.mod <- file.path(wdir, "Modis", "MOD11A1")
+modDownload(searchres = sres, 
+            username = "username", 
+            password = "password",
+            AppRoot = wdir.mod)
 
-src.tif<-file.path(src.mod,"tif")
+wdir.mod.tif<-file.path(wdir.mod,"tif")
+wdir.mod.hdf <- file.path(wdir.mod, "hdf")
 
 # extract the first image
-hdf.files <- list.files(src.mod.hdf, 
+files.mod.hdf <- list.files(wdir.mod.hdf, 
                         full.names = TRUE, 
                         pattern = "\\\\.hdf$")
-first.hdf.file <- hdf.files[1]
-modExtractHDF(filesHDF = first.hdf.file,
-              AppRoot = src.tif)
+files.mod.hdf.1 <- files.mod.hdf[1]
+modExtractHDF(filesHDF = files.mod.hdf.1,
+              AppRoot = wdir.mod.tif)
 }
 }

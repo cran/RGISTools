@@ -40,7 +40,19 @@ senSearchQuery<-function(...){
     if(!length(arg$lonlat)==2){
       stop("The intersects argument is not a longitude/latitude valid location.")
     }
-    url<-paste0(url," AND footprint:",'"',"intersects(",arg$lonlat[2],", ",arg$lonlat[1],")",'"')
+    url<-paste0(url," AND footprint:",'"',"intersects(",arg$lonlat[1],", ",arg$lonlat[2],")",'"')
+  }
+  if("region"%in%names(arg)){
+    if(arg$verbose){
+      message(print("Adding query region"))
+    }
+    arg$region<-transform_multiple_proj(arg$region, proj4=st_crs(4326))
+    ext<-st_bbox(arg$region)
+    url<-paste0(url," AND footprint:",'"',"intersects(POLYGON((",ext$xmin," ",ext$ymin,","
+                ,ext$xmin," ",ext$ymax,","
+                ,ext$xmax," ",ext$ymax,","
+                ,ext$xmax," ",ext$ymin,","
+                ,ext$xmin," ",ext$ymin,")))",'"')
   }
   if("product"%in%names(arg)){
     if(arg$verbose){
@@ -53,6 +65,12 @@ senSearchQuery<-function(...){
       message("Added relative orbit number type.")
     }
     url<-paste0(url," AND relativeorbitnumber:",arg$relativeorbit)
+  }
+  if("cloudCover"%in%names(arg)){
+    if(arg$verbose){
+      message("Added cloud cover percentage.")
+    }
+    url<-paste0(url," AND cloudcoverpercentage:[",min(arg$cloudCover)," TO ",max(arg$cloudCover),"]")
   }
   if("qformat"%in%names(arg)){
     url<-paste0(url,"&format=",arg$qformat)

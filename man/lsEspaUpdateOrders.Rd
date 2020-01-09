@@ -22,6 +22,9 @@ is mandatory if \code{username} and \code{password} are not defined.}
 \item{verbose}{logical argument. If \code{TRUE}, the function prints the
 running steps and warnings.}
 }
+\value{
+this function returns a \code{dataframe} with the updated order information from ESPA.
+}
 \description{
 \code{lsEspaUpdateOrders} checks the current status of a request made to EROS
 Centre Science Processing Architecture (ESPA) to pre-process Landsat level-1
@@ -39,7 +42,7 @@ interpretation can be found in the ESPA's API
 }
 \examples{
 \dontrun{
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
+src <- file.path(tempdir(),"Path_for_downloading_folder")
 # search Landsat 7 level-1
 search.res <- ls7Search(startDate = as.Date("01-01-2017", "\%d-\%m-\%Y"),
                         endDate = as.Date("15-01-2017", "\%d-\%m-\%Y"),

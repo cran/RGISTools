@@ -2,7 +2,7 @@
 #'
 #' \code{modSearch} searches MODIS images in the 
 #' \href{https://lpdaacsvc.cr.usgs.gov/services/inventory}{NASA Common Metadata Repository}
-#' (CMR) concerning a particular location and date interval. The function returns an 
+#' (CMR) concerning a particular location and date interval. The function returns a 
 #' \code{character} vector with the names of the images and their uniform resource
 #' locators (URLs)
 #'
@@ -21,10 +21,6 @@
 #' By default, the URL points towards the actual image.
 #'
 #' @param product the short name of the MODIS product.
-#' @param startDate  a \code{Date} class object with the starting date of the 
-#' study period.
-#' @param endDate a \code{Date} class object with the ending date of the 
-#' study period.
 #' @param collection MODIS collection. By default, 6.
 #' @param resType response type of the query (\code{browseurl} or \code{url}).
 #' @param verbose logical argument. If \code{TRUE}, the function prints the 
@@ -34,43 +30,65 @@
 # This argument is mandatory if extent is not defined.
 #' @param ... arguments for nested functions:
 #' \itemize{
+#'   \item \code{dates} a vector with the capturing dates being searched. This
+#'   argument is mandatory if \code{startDate} and \code{endDate} are not defined.
+#'   \item  \code{startDate} a \code{Date} class object with the starting date 
+#'   of the study period. This argument is mandatory if \code{dates} is not defined.
+#'   \item  \code{endDate} a \code{Date} class object with the ending date of the 
+#' study period. This argument is mandatory if 
+#'   \code{dates} is not defined.
+#'   \item \code{region} a \code{Spatial*}, projected \code{raster*}, or \code{sf}
+#'   class object defining the area of interest. This argument is mandatory if
+#'   \code{extent} or \code{lonlat} are not defined.
 #'   \item \code{lonlat} a vector with the longitude/latitude
 #'   coordinates of the point of interest. This argument is mandatory if 
-#'   \code{polygon} or \code{extent} are not defined.
+#'   \code{region} or \code{extent} are not defined.
 #'   \item \code{extent}  an \code{extent}, \code{Raster*}, or 
 #'   \code{Spatial*} object representing the region of interest with 
 #'   longitude/latitude coordinates. This argument is mandatory if 
-#'   \code{polygon} or \code{lonlat} are not defined.
-#'   \item \code{polygon} a list of vectors defining the points of a polygon
-#'   with longitude/latitude coordinates. This argument is mandatory if
-#'   \code{lonlat} or \code{extent} are not defined.
+#'   \code{region} or \code{lonlat} are not defined.
 #' }
+#' @return a \code{vector} with the url for image downloading.
 #' @examples
 #' \dontrun{
 #' # load a spatial polygon object of Navarre with longitude/latitude coordinates
 #' data(ex.navarre)
 #' # searching MODIS MYD13A2 images between 2011 and 2013 by longitude/latitude
 #' # using a polygon class variable
-#' img.list <- modSearch(product = "MYD13A2",
-#'                       startDate = as.Date("01-01-2011", "%d-%m-%Y"),
-#'                       endDate = as.Date("31-12-2013", "%d-%m-%Y"),
-#'                       collection = 6,
-#'                       extent = ex.navarre)
+#' sres <- modSearch(product = "MYD13A2",
+#'                   startDate = as.Date("01-01-2011", "%d-%m-%Y"),
+#'                   endDate = as.Date("31-12-2013", "%d-%m-%Y"),
+#'                   collection = 6,
+#'                   extent = ex.navarre)
 #' # region of interest: defined based on longitude/latitude extent
 #' # searching MODIS MYD13A2 images in 2010 by longitude/latitude
 #' # using a extent class variable defined by the user
 #' aoi = extent(c(-2.49, -0.72, 41.91, 43.31))
-#' my.imgs <- modSearch(product = "MYD13A2",
-#'                      startDate = as.Date("01-01-2010", "%d-%m-%Y"),
-#'                      endDate = as.Date("31-12-2010", "%d-%m-%Y"),
-#'                      collection = 6,
-#'                      extent = aoi)
-#' head(my.imgs)
+#' sres <- modSearch(product = "MYD13A2",
+#'                   startDate = as.Date("01-01-2010", "%d-%m-%Y"),
+#'                   endDate = as.Date("31-12-2010", "%d-%m-%Y"),
+#'                   collection = 6,
+#'                   extent = aoi)
+#' head(sres)
 #' }
-modSearch<-function(product,startDate,endDate,collection=6,resType="url",verbose=FALSE,...){
+modSearch<-function(product,collection=6,resType="url",verbose=FALSE,...){
+  arg=list(...)
+  if((!"dates"%in%names(arg))&
+     ((!"startDate"%in%names(arg)|(!"endDate"%in%names(arg))))
+  )stop("startDate and endDate, or dates argument need to be defined!")
+  
+  if("dates"%in%names(arg)){
+    stopifnot(class(arg$dates)=="Date")
+    startDate<-min(arg$dates)
+    endDate<-max(arg$dates)
+  }else{
+    startDate<-arg$startDate
+    endDate<-arg$endDate
+  }
+  
   stopifnot(class(startDate)=="Date")
   stopifnot(class(endDate)=="Date")
-  arg=list(...)
+  
   if(any(names(arg)%in%c("pathrow"))){
     stopifnot(class(arg$pathrow)=="list")
     stop("pathrow search not supported for Modis Search")
@@ -90,22 +108,16 @@ modSearch<-function(product,startDate,endDate,collection=6,resType="url",verbose
     loc<-paste0(getRGISToolsOpt("MODINVENTORY.url"),
                 "?product=",product,
                 "&version=",collection,
-                "&bbox=",paste0(c(bbox(arg$extent)),collapse = ","),
+                "&bbox=",paste0(c(st_bbox(arg$extent)),collapse = ","),
                 "&return=",resType,
                 "&date=",format(startDate,"%Y-%m-%d"),
                 ",",format(endDate,"%Y-%m-%d"))
-  }else if("polygon"%in%names(arg)){
-    #arg$polygon<-list(c(1,2),c(3,4))
-    pts<-paste(arg$polygon[[1]][2])
-    pts<-paste(pts,arg$polygon[[1]][1],sep = ",")
-    for(x in 2:length(arg$polygon)){
-      pts<-paste(pts,arg$polygon[[x]][2],sep = ",")
-      pts<-paste(pts,arg$polygon[[x]][1],sep = ",")
-    }
+  }else if("region"%in%names(arg)){
+    arg$region<-transform_multiple_proj(arg$region, proj4=st_crs(4326))
     loc<-paste0(getRGISToolsOpt("MODINVENTORY.url"),
                 "?product=",product,
                 "&version=",collection,
-                "&polygon=",pts,
+                "&bbox=",paste0(st_bbox(arg$region),collapse = ","),
                 "&return=",resType,
                 "&date=",format(startDate,"%Y-%m-%d"),
                 ",",format(endDate,"%Y-%m-%d"))
@@ -128,6 +140,13 @@ modSearch<-function(product,startDate,endDate,collection=6,resType="url",verbose
   modisres <- xmlSApply(xmlres,
                         function(x) xmlSApply(x,xmlValue))
   close(req)
+  
+  #filter dates
+  if("dates"%in%names(arg)){
+    dates<-modGetDates(modisres)
+    modisres<-modisres[dates%in%arg$dates]
+  }
+  
   return(modisres)
 }
 

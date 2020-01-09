@@ -7,7 +7,8 @@
 genGetDates(str, ...)
 }
 \arguments{
-\item{str}{\code{character} argument containing the date in julian format "\code{YYYYJJJ}".}
+\item{str}{\code{character} containing the date as "\code{YYYYJJJ}",
+where \code{Y} and \code{J} are year and julian day digits.}
 
 \item{...}{arguments for nested functions:
 \itemize{
@@ -15,7 +16,8 @@ genGetDates(str, ...)
 }}
 }
 \value{
-a \code{Date} class object with the date of the image.
+a \code{Date} class object with the date of the image or \code{character} class,
+if \code{format} argument is used.
 }
 \description{
 \code{genGetDates} extracts the date of one or several images when the name

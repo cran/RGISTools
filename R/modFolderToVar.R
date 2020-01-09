@@ -5,7 +5,7 @@
 #' of a time series of MODIS images. The images are specified by the path to
 #' the folder that stores the imagery (resulting from the \code{\link{modMosaic}} 
 #' function). The function returns a \code{RasterStack} with a time series of 
-#' images with the index.
+#' images of the remote sensing index.
 #'
 #' The function requires the definition of the \code{src} and \code{fun} 
 #' arguments. The \code{src} is usually the path resulting from 
@@ -17,7 +17,7 @@
 #'
 #' @param src path to the folder with the MODIS multispectral images.
 #' @param AppRoot the directory of the outcoming time series.
-#' @param fun is a \code{function} that computes the remote sensing index.
+#' @param fun a \code{function} that computes the remote sensing index.
 #' @param getStack logical argument. If \code{TRUE}, returns the time series of
 #' images as a \code{RasterStack}, otherwise the images are saved in the Hard
 #' Drive Device (HDD).
@@ -26,49 +26,55 @@
 #' @param verbose logical argument. If \code{TRUE}, the function prints the 
 #' running steps and warnings.
 #' @param ... arguments for nested functions.
-#'
+#'  \itemize{
+#'   \item \code{dates} a vector with the capturing dates being considered
+#'   for mosaicking. If not supplied, all dates are mosaicked.
+#' }
+#' @return this function does not return anything, unless \code{getStack = TRUE}
+#' which then returns a \code{RasterStack} with the time series of with the
+#' index. 
 #' @examples
 #' \dontrun{
 #' # load a spatial polygon object of Navarre
 #' data(ex.navarre)
 #' # main output directory
-#' src <- paste0(tempdir(),"/Path_for_downloading_folder")
-#' print(src)
+#' wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+#' print(wdir)
 #' # download MOD09 images
-#' modDownload(product = "MOD09GA",
-#'             startDate = as.Date("01-01-2018", "%d-%m-%Y"),
-#'             endDate = as.Date("03-01-2018", "%d-%m-%Y"),
-#'             username = "username",
-#'             password = "password",
-#'             AppRoot = src, # output folder for tif images
-#'             extract.tif = TRUE, 
-#'             collection = 6,
-#'             extent = ex.navarre)
-#' # assign src.mod as the output folder from modMosaic
-#' src.mod <- file.path(src, "Modis", "MOD09GA") # output directory
-#' src.tif <- file.path(src.mod, "tif") # input directory
+#' modDownSearch(product = "MOD09GA",
+#'               startDate = as.Date("01-01-2018", "%d-%m-%Y"),
+#'               endDate = as.Date("03-01-2018", "%d-%m-%Y"),
+#'               username = "username",
+#'               password = "password",
+#'               AppRoot = wdir, # output folder for tif images
+#'               extract.tif = TRUE, 
+#'               collection = 6,
+#'               extent = ex.navarre)
+#' # assign wdir.mod as the output folder from modMosaic
+#' wdir.mod <- file.path(wdir, "Modis", "MOD09GA") # output directory
+#' wdir.mod.tif <- file.path(wdir.mod, "tif") # input directory
 #' # mosaic the MODIS images
-#' modMosaic(src.tif,
-#'           AppRoot = src.mod,
+#' modMosaic(wdir.mod.tif,
+#'           AppRoot = wdir.mod,
 #'           out.name = "Navarre")
 #' # path to the folder with the mosaicked images
-#' src.navarre <- file.path(src.mod, "Navarre")
+#' wdir.mod.navarre <- file.path(wdir.mod, "Navarre")
 #' # generate NDVI images of Navarre
-#' src.variables <- file.path(src.mod, "Variables")
-#' dir.create(src.variables)
-#' modFolderToVar(src = src.navarre,
+#' wdir.mod.var <- file.path(wdir.mod, "Variables")
+#' dir.create(wdir.mod.var)
+#' modFolderToVar(src = wdir.mod.navarre,
 #'                fun = varEVI,
 #'                scfun = getRGISToolsOpt("MOD09SCL"),
-#'                AppRoot = src.variables,
+#'                AppRoot = wdir.mod.var,
 #'                overwrite = TRUE)
 #' # import mosaicked images (.tif) to the environment in `R'
-#' flist <- list.files(file.path(src.variables,"EVI"),
-#'                     pattern = "\\.tif$",
-#'                     full.names = TRUE,
-#'                     recursive = TRUE)
+#' files.mod.evi <- list.files(file.path(wdir.mod.var,"EVI"),
+#'                             pattern = "\\.tif$",
+#'                             full.names = TRUE,
+#'                             recursive = TRUE)
 #' 
-#' files.raster <- lapply(flist,raster)
-#' spplot(files.raster[[1]],at=seq(-1,2.5))
+#' img.mod.evi <- lapply(files.mod.evi,raster)
+#' spplot(img.mod.evi[[1]],at=seq(-1,2.5))
 #' }
 modFolderToVar<-function(src,AppRoot,fun,getStack=FALSE,overwrite=FALSE,verbose=FALSE,...){
   function.arg<-list(...)
@@ -83,10 +89,20 @@ modFolderToVar<-function(src,AppRoot,fun,getStack=FALSE,overwrite=FALSE,verbose=
   mod.list<-list.files(src,full.names = TRUE)
   result<-NULL
   rstack<-NULL
+  
+  dates<-genGetDates(mod.list)
+  if("dates"%in%names(function.arg)){
+    mod.list<-mod.list[dates%in%function.arg$dates]
+  }
+  if(length(mod.list)==0)stop(paste0("No images found in ",src," path."))
   for(imgfd in mod.list){
     message(paste0("Calculating ",vartype," at date ",genGetDates(imgfd),"."))
     modbands<-getRGISToolsOpt("MOD09BANDS")
     mod.img<-list.files(imgfd,full.names = TRUE,pattern = "\\.tif$")
+    if(length(mod.img)==0){
+      message(paste0("Images not found in ",imgfd))
+      next
+    }
     out.file.name<-paste0(AppRoot,"/",vartype,"_",format(genGetDates(imgfd),"%Y%j"),".tif")
     if(overwrite|(!file.exists(out.file.name))){
       funString<-"result<-fun("

@@ -29,18 +29,20 @@
 #' with the same name.
 #' @param untar logical argument. If TRUE, untars the downloaded images.
 #' @param ... argument for nested functions
-#'
+#' @return this function does not return anything. It saves the imagery as
+#' `tar.gz’ (and GTiff files) in a folder called `raw’ (`untar’) in the
+#'  \code{AppRoot} directory.
 #' @examples
 #' \dontrun{
-#' src <- paste0(tempdir(),"/Path_for_downloading_folder")
-#' print(src)
+#' wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+#' print(wdir)
 #' # search Landsat-7 level-1
-#' search.res <- ls7Search(startDate = as.Date("01-01-2017", "%d-%m-%Y"),
-#'                         endDate = as.Date("15-01-2017", "%d-%m-%Y"),
-#'                         lonlat = c(-1.64323, 42.81687),
-#'                         AppRoot = src)
+#' sres <- ls7Search(startDate = as.Date("01-01-2017", "%d-%m-%Y"),
+#'                   endDate = as.Date("15-01-2017", "%d-%m-%Y"),
+#'                   lonlat = c(-1.64323, 42.81687),
+#'                   AppRoot = wdir)
 #' # request to ESPA the prepocessing of level-1 images to get the surface reflectance
-#' order <- lsEspaOrderImages(search.res = search.res,
+#' order <- lsEspaOrderImages(search.res = sres,
 #'                            username = "username", 
 #'                            password = "password", 
 #'                            product = 'sr',
@@ -53,14 +55,14 @@
 #'                              username = "username", 
 #'                              password = "password")
 #' # saving directory
-#' dir.ESPA <- file.path(src,"Landsat7","ESPA")
-#' dir.create(dir.ESPA, recursive = TRUE)
+#' wdir.ls7.ESPA <- file.path(wdir,"Landsat7","ESPA")
+#' dir.create(wdir.ls7.ESPA, recursive = TRUE)
 #' # download when status says: complete
 #' lsEspaDownloadOrders(orders = orders,
 #'                      username = "username", 
 #'                      password = "password",
 #'                      untar = TRUE,
-#'                      AppRoot = dir.ESPA)
+#'                      AppRoot = wdir.ls7.ESPA)
 #'}
 lsEspaDownloadOrders<-function(orders,
                                AppRoot,
@@ -97,7 +99,8 @@ lsEspaDownloadOrders<-function(orders,
                             verbose=verbose,
                             n.attempts=n.attempts,
                             untar=untar,
-                            overwrite=overwrite)
+                            overwrite=overwrite,
+                            ...)
         }
       }
       if(all(!unname(unlist(lapply(orders,function(x)return(x$Status))))%in%c("ordered","processing","complete"))){
@@ -113,7 +116,8 @@ lsEspaDownloadOrders<-function(orders,
 ############################################################################
 #  RECURSIVE FUNCTION
 ############################################################################
-lsDownEspa<-function(orders,norder,c.handle,AppRoot,images.order,n.attempts,verbose=FALSE,overwrite=FALSE,untar=FALSE){
+lsDownEspa<-function(orders,norder,c.handle,AppRoot,images.order,n.attempts,verbose=FALSE,overwrite=FALSE,untar=FALSE,...){
+  arg<-list(...)
   r <- curl_fetch_memory(paste0(getRGISToolsOpt("LS.ESPA.API"),getRGISToolsOpt("LS.ESPA.API.v"),"/item-status/",orders[norder]), 
                          c.handle)
   jd<-rawToChar(r$content)
@@ -160,7 +164,17 @@ lsDownEspa<-function(orders,norder,c.handle,AppRoot,images.order,n.attempts,verb
   untar.dir<-file.path(dirname(dirname(out.file.name)),"untar",gsub(".tar.gz","",basename(out.file.name)))
   if((untar&!file.exists(untar.dir))|(untar&overwrite)){
     dir.create(untar.dir,showWarnings = FALSE)
-    untar(out.file.name,exdir=untar.dir)
+    
+    if("bFilter"%in%names(arg)){
+      flist<-untar(out.file.name,list=TRUE)
+      flist<-flist[Reduce("|", lapply(paste0(arg$bFilter,"\\.tif$"),grepl,flist))]
+      untar(tarfile=out.file.name,
+            files=flist,
+            exdir = untar.dir)
+    }else{
+      untar(out.file.name,exdir=untar.dir)
+    }
+
   }
   return(images.order)
 }

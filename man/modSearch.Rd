@@ -4,17 +4,11 @@
 \alias{modSearch}
 \title{Search MODIS images}
 \usage{
-modSearch(product, startDate, endDate, collection = 6, resType = "url",
-  verbose = FALSE, ...)
+modSearch(product, collection = 6, resType = "url", verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{product}{the short name of the MODIS product.}
-
-\item{startDate}{a \code{Date} class object with the starting date of the 
-study period.}
-
-\item{endDate}{a \code{Date} class object with the ending date of the 
-study period.}
 
 \item{collection}{MODIS collection. By default, 6.}
 
@@ -25,22 +19,32 @@ running steps and warnings.}
 
 \item{...}{arguments for nested functions:
 \itemize{
+  \item \code{dates} a vector with the capturing dates being searched. This
+  argument is mandatory if \code{startDate} and \code{endDate} are not defined.
+  \item  \code{startDate} a \code{Date} class object with the starting date 
+  of the study period. This argument is mandatory if \code{dates} is not defined.
+  \item  \code{endDate} a \code{Date} class object with the ending date of the 
+study period. This argument is mandatory if 
+  \code{dates} is not defined.
+  \item \code{region} a \code{Spatial*}, projected \code{raster*}, or \code{sf}
+  class object defining the area of interest. This argument is mandatory if
+  \code{extent} or \code{lonlat} are not defined.
   \item \code{lonlat} a vector with the longitude/latitude
   coordinates of the point of interest. This argument is mandatory if 
-  \code{polygon} or \code{extent} are not defined.
+  \code{region} or \code{extent} are not defined.
   \item \code{extent}  an \code{extent}, \code{Raster*}, or 
   \code{Spatial*} object representing the region of interest with 
   longitude/latitude coordinates. This argument is mandatory if 
-  \code{polygon} or \code{lonlat} are not defined.
-  \item \code{polygon} a list of vectors defining the points of a polygon
-  with longitude/latitude coordinates. This argument is mandatory if
-  \code{lonlat} or \code{extent} are not defined.
+  \code{region} or \code{lonlat} are not defined.
 }}
+}
+\value{
+a \code{vector} with the url for image downloading.
 }
 \description{
 \code{modSearch} searches MODIS images in the 
 \href{https://lpdaacsvc.cr.usgs.gov/services/inventory}{NASA Common Metadata Repository}
-(CMR) concerning a particular location and date interval. The function returns an 
+(CMR) concerning a particular location and date interval. The function returns a 
 \code{character} vector with the names of the images and their uniform resource
 locators (URLs)
 }
@@ -65,20 +69,20 @@ By default, the URL points towards the actual image.
 data(ex.navarre)
 # searching MODIS MYD13A2 images between 2011 and 2013 by longitude/latitude
 # using a polygon class variable
-img.list <- modSearch(product = "MYD13A2",
-                      startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                      endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
-                      collection = 6,
-                      extent = ex.navarre)
+sres <- modSearch(product = "MYD13A2",
+                  startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
+                  collection = 6,
+                  extent = ex.navarre)
 # region of interest: defined based on longitude/latitude extent
 # searching MODIS MYD13A2 images in 2010 by longitude/latitude
 # using a extent class variable defined by the user
 aoi = extent(c(-2.49, -0.72, 41.91, 43.31))
-my.imgs <- modSearch(product = "MYD13A2",
-                     startDate = as.Date("01-01-2010", "\%d-\%m-\%Y"),
-                     endDate = as.Date("31-12-2010", "\%d-\%m-\%Y"),
-                     collection = 6,
-                     extent = aoi)
-head(my.imgs)
+sres <- modSearch(product = "MYD13A2",
+                  startDate = as.Date("01-01-2010", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2010", "\%d-\%m-\%Y"),
+                  collection = 6,
+                  extent = aoi)
+head(sres)
 }
 }

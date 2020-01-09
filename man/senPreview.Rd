@@ -4,7 +4,8 @@
 \alias{senPreview}
 \title{Preview Sentinel-2 satellite images}
 \usage{
-senPreview(searchres, username, password, n, size = NULL)
+senPreview(searchres, username, password, n, dates, lpos = c(3, 2, 1),
+  add.Layer = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{searchres}{a vector with the results from \code{\link{senSearch}}.}
@@ -16,12 +17,33 @@ senPreview(searchres, username, password, n, size = NULL)
 \item{n}{a \code{numeric} argument identifying the row of the image in
 \code{searchres}.}
 
-\item{size}{a \code{numeric} argument specifying the size of the preview to
-be displayed, in pixels.}
+\item{dates}{a vector with the dates being considered
+for previewing. This argument is mandatory if 
+\code{n} is not defined.}
+
+\item{lpos}{vector argument. Defines the position of the red-green-blue
+layers to enable false color visualization.}
+
+\item{add.Layer}{logical argument. If \code{TRUE}, the function plots the 
+image on an existing map. Allows combinations of images on a map using 
+\code{\link{lsPreview}} and \code{\link{modPreview}} functions.}
+
+\item{verbose}{logical argument. If \code{TRUE}, the function prints the 
+running steps and warnings.}
+
+\item{...}{arguments for nested functions:
+ \itemize{
+  \item arguments allowed by the \code{viewRGB} function from \code{mapview}
+  packages are valid arguments
+}}
+}
+\value{
+this function does not return anything. It displays a preview of one
+of the search results.
 }
 \description{
-\code{senPreview} shows a preview of the \code{n}-th image from a set of
-search results.
+\code{senPreview} shows a preview of the \code{n}-th image from a set of 
+search results on an interactive map.
 }
 \details{
 The function shows a preview of the \code{n}-th output image from a search
@@ -35,18 +57,23 @@ Credentials from an ESA’s `SciHub' account are needed, which can be obtained
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 # perform the search query
-searchres <- senSearch(startDate = as.Date("2018210","\%Y\%j"),
-                       endDate = as.Date("2018218","\%Y\%j"),
-                       platform = "Sentinel-2",
-                       extent = ex.navarre,
-                       product = "S2MSI1C",
-                       username = "username",
-                       password = "password")
+sres <- senSearch(startDate = as.Date("2018210","\%Y\%j"),
+                  endDate = as.Date("2018218","\%Y\%j"),
+                  platform = "Sentinel-2",
+                  extent = ex.navarre,
+                  product = "S2MSI1C",
+                  username = "username",
+                  password = "password")
 # preview some images
-senPreview(searchres, 3, username = "username", password = "password")
-senPreview(searchres, 1, username = "username", password = "password", 600)
+senPreview(sres, username = "username", password = "password",n=1)
+senPreview(sres, username = "username", password = "password",n=3, add.Layer =TRUE)
 
 # show the dates in julian days
-senGetDates(names(searchres),format="\%Y\%j")
+senGetDates(names(sres),format="\%Y\%j")
+
+senPreview(sres, 
+           username = "username", 
+           password = "password", 
+           dates = senGetDates(names(sres[3])))
 }
 }

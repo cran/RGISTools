@@ -4,7 +4,8 @@
 \alias{modPreview}
 \title{Preview MODIS satellite images}
 \usage{
-modPreview(searchres, n, size = NULL)
+modPreview(searchres, n, dates, lpos = c(3, 2, 1), add.Layer = FALSE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{searchres}{a vector with the results from \code{\link{modSearch}}.}
@@ -12,16 +13,37 @@ modPreview(searchres, n, size = NULL)
 \item{n}{a \code{numeric} argument identifying the location of the image in
 \code{searchres}.}
 
-\item{size}{a \code{numeric} argument specifying the size of the preview to
-be displayed, in pixels.}
+\item{dates}{a vector with the dates being considered
+for previewing. This argument is mandatory if 
+\code{n} is not defined.}
+
+\item{lpos}{vector argument. Defines the position of the red-green-blue
+layers to enable false color visualization.}
+
+\item{add.Layer}{logical argument. If \code{TRUE}, the function plots the 
+image on an existing map. Allows combinations of images on a map using 
+\code{\link{lsPreview}} and \code{\link{senPreview}} functions.}
+
+\item{verbose}{logical argument. If \code{TRUE}, the function prints the 
+running steps and warnings.}
+
+\item{...}{arguments for nested functions:
+ \itemize{
+  \item arguments allowed by the \code{viewRGB} function from \code{mapview}
+   packages are valid arguments.
+}}
+}
+\value{
+this function does not return anything. It displays a preview of one
+of the search results.
 }
 \description{
 \code{modPreview} shows a preview of the \code{n}-th image from a set of 
-search results.
+search results on an interactive map.
 }
 \details{
 The function shows a preview of the \code{n}-th output image from a search
-in the MODIS archives (\code{\link{modSearch}}), with 
+in the MODIS archives (\code{\link{modSearch}}, with 
 \code{resType = "browseurl"}). The preview is downloaded from the
 \href{https://earthdata.nasa.gov}{`EarthData' Platform}.
 Please, be aware that only some images may have a preview.
@@ -31,14 +53,14 @@ Please, be aware that only some images may have a preview.
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 # retrieve jpg images covering Navarre region between 2011 and 2013
-searchres <- modSearch(product = "MOD09GA",
-                      startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                      endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
-                      collection = 6,
-                      resType = "browseurl",
-                      extent = ex.navarre)
+sres <- modSearch(product = "MOD09GA",
+                  startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
+                  collection = 6,
+                  resType = "browseurl",
+                  extent = ex.navarre)
                       
-modPreview(searchres, 1)
-modPreview(searchres, 1, size = 600)
+modPreview(sres,n=1)
+modPreview(sres,2,add.Layer=T)
 }
 }

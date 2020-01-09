@@ -4,16 +4,16 @@
 \alias{senMosaic}
 \title{Mosaic a set of Sentinel-2 images}
 \usage{
-senMosaic(src, AppRoot, extent = NULL, out.name = "outfile",
-  verbose = FALSE, gutils = FALSE, overwrite = FALSE, ...)
+senMosaic(src, AppRoot, region = NULL, out.name = "outfile",
+  verbose = FALSE, gutils = TRUE, overwrite = FALSE, ...)
 }
 \arguments{
 \item{src}{the path of the folder with the Sentinel images in GTiff format.}
 
 \item{AppRoot}{the directory to save the mosaicked images.}
 
-\item{extent}{an \code{extent}, \code{Raster*}, or \code{Spatial*} object
-representing the region of interest.}
+\item{region}{a \code{Spatial*}, projected \code{raster*}, or \code{sf} class object 
+defining the area of interest.}
 
 \item{out.name}{the name of the folder that stores the outputs. By default,
 “outfile” is assigned.}
@@ -30,12 +30,17 @@ images with the same name.}
 \item{...}{arguments for nested functions:
  \itemize{
   \item \code{pathrow} a \code{list} of vectors with the path and row numbers
-  of the tiles concerning the region of interest.
+  of the tiles concerning the region of interest. This argument is mandatory
+  if \code{region} is not defined.
   \item \code{bFilter} a vector with the bands to be mosaicked. If not
   supplied, all bands are mosaicked.
-  \item \code{dayFilter} a vector with the capturing dates being considered
+  \item \code{dates} a vector with the capturing dates being considered
   for mosaicking. If not supplied, all dates are mosaicked.
 }}
+}
+\value{
+this function does not return anything. It saves the imagery in the
+ \code{AppRoot} directory.
 }
 \description{
 \code{senMosaic} merges the Sentinel-2 imagery that covers a region of interest
@@ -44,49 +49,48 @@ on the same dates.
 \details{
 The function mosaics the imagery in the \code{src} folder. The folder can
 hold GTiff images from several tiles, dates and bands. When only a subset
-of bands or dates has to be mosaicked, the band names or dates should be
-provided through the argument \code{bFilter} or \code{dayFilter}. Band
-names are defined by the letter “b” and the two-digit band number (e.g., 
-‘b01’). The dates must be provided as a \code{Date} class object. Once
-mosaicked, the images can be cropped to fit the \code{extent} (optional).
-The \code{extent} can be defined in any coordinate reference system, since
-\code{senMosaic} automatically reproject the extent to match the projection
-of the image. The outputs will be placed in the \code{AppRoot} directory,
-under the folder named as \code{out.name}. If no name is provided, the 
-folder is named “outfile”. To use \code{gutils = TRUE}, a proper installation
-of `GDAL' is required. This method is faster than the native `R' functions.
+dates has to be mosaicked, the dates should be provided through the argument
+\code{dates}. The dates must be provided as a \code{Date} class object.For
+further details about the \code{bFilter} argument, go to the 
+\code{\link{senDownload}} function. Once mosaicked, the images can be cropped
+to fit the \code{region} (optional). The \code{region} can be defined in any
+coordinate reference system, since \code{senMosaic} automatically reproject
+the extent to match the projection of the image. The outputs will be placed
+in the \code{AppRoot} directory, under the folder named as \code{out.name}.
+If no name is provided, the folder is named “outfile”.
 }
 \examples{
 \dontrun{
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 # main output directory
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
 # download Sentinel-2 images
-senDownload(startDate = as.Date("2018210", "\%Y\%j"),
-            endDate = as.Date("2018218", "\%Y\%j"),
-            platform = "Sentinel-2",
-            extent = ex.navarre,
-            product = "S2MSI1C",
-            pathrow = c("R094"),
-            username = "username",
-            password = "password",
-            AppRoot = src)
+senDownSearch(startDate = as.Date("2018210", "\%Y\%j"),
+              endDate = as.Date("2018218", "\%Y\%j"),
+              platform = "Sentinel-2",
+              extent = ex.navarre,
+              product = "S2MSI1C",
+              pathrow = c("R094"),
+              username = "username",
+              password = "password",
+              AppRoot = wdir)
 # folder with the unzipped images
-src.sen <- file.path(src, "Sentinel-2")
-src.unzip <- file.path(src.sen, "unzip")
+wdir.sen <- file.path(wdir, "Sentinel-2")
+wdir.sen.unzip <- file.path(wdir.sen, "unzip")
 # mosaic the Sentinel-2 images
-senMosaic(src.unzip,
-          AppRoot = src.sen,
+senMosaic(wdir.sen.unzip,
+          AppRoot = wdir.sen,
           gutils = TRUE,
           out.name = "Navarre")
-
+          
+wdir.sen <- file.path(wdir.sen,"Navarre")
 # load and plot a Sentinel-2 image
-files <- list.files(src.sen, pattern = "\\\\.tif$", full.names = TRUE ,recursive = TRUE)
+files.sen <- list.files(wdir.sen, pattern = "\\\\.tif$", full.names = TRUE ,recursive = TRUE)
 # print Sentinel-2 bands
 getRGISToolsOpt("SEN2BANDS")
-file.rgb <- stack(files[grepl("TCI",files)][1])
-plotRGB(file.rgb)
+file.sen.rgb <- stack(files.sen[grepl("TCI",files.sen)][1])
+plotRGB(file.sen.rgb)
 }
 }

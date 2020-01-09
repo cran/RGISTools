@@ -4,102 +4,88 @@
 \alias{modCloudMask}
 \title{Create cloud masks for MODIS images}
 \usage{
-modCloudMask(startDate, endDate, AppRoot, extent, out.name = "outname",
-  raw.rm = FALSE, overwrite = FALSE, verbose = FALSE, ...)
+modCloudMask(src, AppRoot, out.name, overwrite = FALSE, ...)
 }
 \arguments{
-\item{startDate}{a \code{Date} class object with the starting date of the 
-study period.}
-
-\item{endDate}{a \code{Date} class object with the ending date of the 
-study period.}
+\item{src}{the path to the folder with the MODIS with \code{state_1km} images.}
 
 \item{AppRoot}{the directory where cloud masks are saved.}
 
-\item{extent}{An \code{extent}, \code{Raster*}, or \code{Spatial*} object
-representing the region of interest with longitude/latitude coordinates.}
-
-\item{out.name}{he name of the folder that stores the outputs. By default,
-“outfile” is assigned.}
-
-\item{raw.rm}{logical argument. If \code{TRUE}, raw images are removed.}
+\item{out.name}{the name of the folder that stores the outputs. 
+If the arguemnt is not defined the folder will be named as "CloudMask".}
 
 \item{overwrite}{logical argument. If \code{TRUE}, overwrites the existing
 images with the same name.}
 
-\item{verbose}{logical argument. If \code{TRUE}, the function prints the 
-running steps and warnings.}
-
-\item{...}{arguments for nested functions.}
+\item{...}{arguments for nested functions.
+\itemize{
+  \item \code{dates} a vector of dates being considered
+  for creating cloud masks. This argument is optional.
+}}
+}
+\value{
+this function does not return anything. It saves the cloud masks (CLD)
+as GTiff files in the \code{AppRoot} directory.
 }
 \description{
-\code{modCloudMask} creates cloud masks derived from the "\code{MOD35_L2}" 
-product.
+\code{modCloudMask} creates cloud masks derived from the State Quality
+Assurance (State QA) band.
 }
 \details{
-This function, downloads and processes the "\code{MOD35_L2}" products to create
-cloud masks composed of \code{NA}'s (cloud) and \code{1}'s (clear). The
-resulting cloud mask layers need to be reprojected because resolution and
-projection differences with other MODIS products. This function requires
-`GDAL' and the `\code{gdalUtils}' library properly installed.
+This function, interprets the State Quality Assurance (State QA) band to
+create cloud masks. The \code{NA} and \code{1} values of the mask represent
+cloudy and clear-sky pixels pixels respectively.
 }
 \examples{
 \dontrun{
 # load a spatial polygon object of Navarre
 data(ex.navarre)
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
 
 # search and download images from MODIS between
 # 01-01-2018 and 03-01-2018 for the region of Navarre
-modDownload(product = "MOD09GA",
-            startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
-            endDate = as.Date("03-01-2018", "\%d-\%m-\%Y"),
+modDownSearch(product = "MOD09GA",
+            startDate = as.Date("01-01-2017", "\%d-\%m-\%Y"),
+            endDate = as.Date("03-01-2017", "\%d-\%m-\%Y"),
             username = "username",
             password = "password",
-            AppRoot = src,
+            AppRoot = wdir,
             extract.tif = TRUE,
             collection = 6,
             extent = ex.navarre)
             
 # assign src1 as the output folder for modMosaic
-src.mod <- file.path(src, "Modis")
-src.tiles <- file.path(src.mod, "MOD09GA")
-tif.src.tiles <- file.path(src.tiles, "tif")
+wdir.mod <- file.path(wdir, "Modis")
+wdir.mod.tiles <- file.path(wdir.mod, "MOD09GA")
+wdir.mod.tif <- file.path(wdir.mod.tiles, "tif")
 # mosaic the MODIS images
-modMosaic(tif.src.tiles, # the input folder 
-          AppRoot = src.tiles, # the output folder 
+modMosaic(wdir.mod.tif, # the input folder 
+          AppRoot = wdir.mod.tiles, # the output folder 
           out.name = "Navarre", # creates Navarre folder in AppRoot
           gutils = TRUE,
           extent = ex.navarre)
-          
+
+
+wdir.mod.navarre <- file.path(wdir.mod.tiles, "Navarre")
 # generate the cloud masks      
-modCloudMask(startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
-             endDate = as.Date("04-01-2018", "\%d-\%m-\%Y"),
-             extent = ex.navarre,
-             AppRoot = src,
-             out.name = "Navarre")
+modCloudMask(src = wdir.mod.navarre,
+             AppRoot = wdir.mod.tiles,
+             overwrite = TRUE)
              
-src.cloud <- file.path(src.mod,"CloudMask")
-# the cloud mask may have different extent, resolution...  
-src.cloud.navarre <- file.path(src.cloud,"Navarre")
-cmask <- list.files(src.cloud.navarre, full.names = TRUE, pattern = "\\\\.tif$")
-cmask.ras <- lapply(cmask, raster)
+files.mod.cld <- file.path(wdir.mod.tiles,"CloudMask")
+img.mod.cld <- stack(list.files(files.mod.cld, full.names=TRUE, pattern="CLD"))
 
-navarre.path <- file.path(src.tiles, "Navarre")
-navarre.img <- list.files(navarre.path,
-                          full.names = TRUE,
-                          recursive = TRUE,
-                          pattern = "\\\\.tif$")
 # select b01
-navarre.img <- navarre.img[grepl("b01_1",navarre.img)]
-navarre.b01.ras <- lapply(navarre.img,raster)
-navarre.b01.stack <- stack(lapply(navarre.b01.ras, projectRaster, navarre.b01.ras[[1]]))
+img.mod.navarre <- stack(list.files(wdir.mod.navarre, 
+                                    full.names=TRUE, 
+                                    recursive = TRUE, 
+                                    pattern="b01_1"))
 
-# reproject the cloud mask to the projection of navarre.b01.stack
-cmask.stack <- stack(lapply(cmask.ras, projectRaster, navarre.b01.stack))
+# project to 500m
+img.mod.cld.500 <- projectRaster(img.mod.cld,img.mod.navarre)
 
 # plot the cloud free b01 layer
-spplot(navarre.b01.stack*cmask.stack)
+spplot(img.mod.navarre*img.mod.cld.500)
 }
 }

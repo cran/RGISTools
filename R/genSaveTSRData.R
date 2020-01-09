@@ -23,7 +23,8 @@
 #' searching for GTiff images.
 #' @param AppRoot the path where the RData is saved.
 #'
-#' @return if \code{AppRoot} is not asigned a \code{RasterStack} with the time series in src folder.
+#' @return a \code{RasterStack} when the \code{AppRoot} argument is not defined.
+#' The function does not return anything otherwise.
 #'
 #' @examples
 #' \dontrun{
@@ -31,42 +32,42 @@
 #' data(ex.navarre)
 #' # set the download folder
 #' s.start <- Sys.time()
-#' src <- paste0(tempdir(),"/Path_for_downloading_folder")
-#' print(src)
+#' wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+#' print(wdir)
 #' # download the images
-#' modDownload(product = "MOD09GA",
+#' modDownSearch(product = "MOD09GA",
 #'             startDate = as.Date("30-07-2018", "%d-%m-%Y"),
 #'             endDate = as.Date("06-08-2018", "%d-%m-%Y"),
 #'             username = "username",
 #'             password = "password",
-#'             AppRoot = src,
+#'             AppRoot = wdir,
 #'             extract.tif = TRUE,
 #'             collection = 6,
 #'             extent = ex.navarre)
 #' # set folder path where MOD09GA images will be saved
-#' src1 <- file.path(src,"Modis","MOD09GA")
+#' wdir.mod <- file.path(wdir,"Modis","MOD09GA")
 #' # set the tif folder path
-#' tif.src <- file.path(src1,"tif")
+#' wdir.mod.tif <- file.path(wdir.mod,"tif")
 #' # mosaic and cut navarre region
-#' modMosaic(tif.src,
-#'           AppRoot = src1,
+#' modMosaic(wdir.mod.tif,
+#'           AppRoot = wdir.mod,
 #'           out.name = "Navarre",
 #'           extent = ex.navarre)
 #' # change src to navarre folder
-#' src2 <- file.path(src1,"Navarre")
+#' wdir.mod.navarre <- file.path(wdir.mod,"Navarre")
 #' # calculate NDVI from navarre folder
-#' modFolderToVar(src2,
+#' modFolderToVar(wdir.mod.navarre,
 #'                fun = varNDVI,
-#'                AppRoot = dirname(src2),
+#'                AppRoot = dirname(wdir.mod.navarre),
 #'                overwrite = TRUE)
 #' # change src TS_sample
-#' src3 <- file.path(dirname(src2),"NDVI")
+#' wdir.mod.ndvi <- file.path(dirname(wdir.mod.navarre),"NDVI")
 #' # create the Rdata
-#' genSaveTSRData(src3, ts.name = "ModisNDVI", AppRoot = src1)
+#' tiles.mod.ndvi<-genSaveTSRData(wdir.mod.ndvi, ts.name = "ModisNDVI")
 #' # remove values out of 0-1 range
-#' ModisNDVI.lim <- genLimitRasterRange(ModisNDVI, mn = 0, mx = 1)
+#' tiles.mod.ndvi.lim <- clamp(tiles.mod.ndvi,lower=0,upper=1)
 #' # plot the ndvi images
-#' spplot(ModisNDVI.lim)
+#' spplot(tiles.mod.ndvi.lim)
 #' s.end <- Sys.time()
 #' s.end - s.start
 #' }
@@ -99,7 +100,8 @@ genSaveTSRData<-function(src,AppRoot=NULL,ts.name="TS.Name",startDate=NULL,endDa
     } 
     assign(ts.name,readAll(rstack))
   }else{
-    assign(ts.name,readAll(stack(flist)))
+    rstack<-readAll(stack(flist))
+    assign(ts.name,rstack)
   }
  
   

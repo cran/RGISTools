@@ -14,10 +14,10 @@
 #'
 #' @examples
 #' # getting path and row numbers from a couple of Sentinel-2 images
-#' str <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
-#'          "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
-#' pr <- senGetTile(str)
-#' print(pr)
+#' files.sen <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
+#'                "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
+#' pr.sen <- senGetTile(files.sen)
+#' print(pr.sen)
 #'
 senGetTile<-function(str){
   name.first<-gsub(".SAFE","",basename(str))
@@ -33,7 +33,7 @@ senGetTile<-function(str){
       }
     }
   }else{
-    stop("Introduced image path is not supported Sentinel image name")
+    stop("Introduced image path is not a supported Sentinel image name.")
   }
   
   return(sTime)
@@ -43,21 +43,25 @@ senGetTile<-function(str){
 #' Return the relative orbit of the Sentinel-2 satellite 
 #'
 #' \code{senGetOrbit} reads the official name of a Sentinel image and returns 
-#' relative orbit. Get relative orbit information 
+#' relative orbit, in "\code{NXXXX_RYYY}" or "\code{RYYY}" format (Sentinel
+#' namig convention).
+#' 
+#' Get information about the relative orbits
 #' \href{https://sentinel.esa.int/web/sentinel/missions/sentinel-2/satellite-description/orbit}{here}.
 #'
-#' @param str the full path or official image name of the Sentinel image from
-#' which the relative orbit is extracted.
+#' 
+#' @param str the full path(s) or official name(s) of the Sentinel images from
+#' which the orbits are retrieved.
 #'
 #' @return an string with the relative orbit of the image in "\code{NXXXX_RYYY}"
 #' or "\code{RYYY}" format, depending on the version of name convention.
 #'
 #' @examples
 #' #example of getting date from Sentinel2 image name
-#' str <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
-#'          "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
-#' pr <- senGetOrbit(str)
-#' print(pr)
+#' files.sen <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
+#'                "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
+#' tile.sen <- senGetOrbit(files.sen)
+#' print(tile.sen)
 #'
 senGetOrbit<-function(str){
   name.first<-gsub(".SAFE","",basename(str))

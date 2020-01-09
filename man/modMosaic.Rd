@@ -4,16 +4,16 @@
 \alias{modMosaic}
 \title{Mosaic a set of MODIS images}
 \usage{
-modMosaic(src, AppRoot, extent = NULL, out.name = "outfile",
-  verbose = FALSE, gutils = FALSE, overwrite = FALSE, ...)
+modMosaic(src, AppRoot, region = NULL, out.name = "outfile",
+  verbose = FALSE, gutils = TRUE, overwrite = FALSE, ...)
 }
 \arguments{
 \item{src}{the path of the folder with the MODIS images in GTiff format.}
 
 \item{AppRoot}{the directory where the mosaicked images are saved.}
 
-\item{extent}{an \code{extent}, \code{Raster*}, or \code{Spatial*} object
-representing the region of interest.}
+\item{region}{a \code{Spatial*}, projected \code{raster*}, or \code{sf} class object 
+defining the area of interest.}
 
 \item{out.name}{the name of the folder that stores the outputs. By default,
 “outfile” is assigned.}
@@ -29,11 +29,12 @@ images with the same name.}
 
 \item{...}{arguments for nested functions:
  \itemize{
-  \item \code{pathrow} a \code{list} of vectors with the path and row numbers
-  of the tiles concerning the region of interest.
+  \item \code{pathrow} a \code{vector} of \code{character} with the 
+  path and row numbers of the tiles concerning the region of interest in
+  'hXXvYY' format. This argument is mandatory if \code{region} is not provided.
   \item \code{bFilter} a vector with the bands to be mosaicked. If not
   supplied, all bands are mosaicked.
-  \item \code{dayFilter} a vector with the capturing dates being considered
+  \item \code{dates} a vector with the capturing dates being considered
   for mosaicking. If not supplied, all dates are mosaicked.
 }}
 }
@@ -44,44 +45,42 @@ region of interest on the same dates.
 \details{
 The function mosaics the imagery in the \code{src} folder. The folder can
 hold GTiff images from several tiles, dates and bands. When only a subset
-of bands or dates has to be mosaicked, the band names or dates should be
-provided through the argument \code{bFilter} or \code{dayFilter}. Band
-names are defined by the letter “b” and the two-digit band number (e.g., 
-‘b01’). The dates must be provided as a \code{Date} class object. Once
-mosaicked, the images can be cropped to fit the \code{extent} (optional).
-The \code{extent} can be defined in any coordinate reference system, since
-\code{modMosaic} automatically reproject the extent to match the projection
-of the image. The outputs will be placed in the \code{AppRoot} directory,
-under the folder named as \code{out.name}. If no name is provided, the 
-folder is named “outfile”. To use \code{gutils = TRUE}, a proper installation
-of `GDAL' is required. This method is faster than the native `R' functions.
+dates has to be mosaicked, the dates should be provided through the argument
+\code{dates}. The dates must be provided as a \code{Date} class objects. For
+further details about the \code{bFilter} argument, go to the 
+\code{\link{modDownload}} function. Once mosaicked, the images can be cropped
+to fit the \code{region} (optional). The \code{region} can be defined in any
+coordinate reference system, since \code{modMosaic} automatically reproject
+the extent to match the projection of the image. The outputs will be placed
+in the \code{AppRoot} directory, under the folder named as \code{out.name}.
+If no name is provided, the folder is named “outfile”.
 }
 \examples{
 \dontrun{
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 # main output directory
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
 # download MODIS images
-modDownload(product = "MOD09GA",
-            startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
-            endDate = as.Date("03-01-2018", "\%d-\%m-\%Y"),
-            username = "username",
-            password = "password",
-            AppRoot = src,
-            extract.tif = TRUE,
-            collection = 6,
-            extent = ex.navarre)
+modDownSearch(product = "MOD09GA",
+              startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
+              endDate = as.Date("03-01-2018", "\%d-\%m-\%Y"),
+              username = "username",
+              password = "password",
+              AppRoot = wdir,
+              extract.tif = TRUE,
+              collection = 6,
+              extent = ex.navarre)
 # folder with the MODIS images extracted 
-src.mod <- file.path(src, "Modis", "MOD09GA")
-tif.src <- file.path(src.mod, "tif")
+wdir.mod <- file.path(wdir, "Modis", "MOD09GA")
+wdir.mod.tif <- file.path(wdir.mod, "tif")
 # mosaic the MODIS images
-modMosaic(tif.src,
-          AppRoot = src.mod,
+modMosaic(wdir.mod.tif,
+          AppRoot = wdir.mod,
           out.name = "Navarre",
           gutils = TRUE,
           overwrite = TRUE,
-          extent = ex.navarre)
+          region = ex.navarre)
 }
 }

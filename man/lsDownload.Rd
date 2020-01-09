@@ -2,44 +2,50 @@
 % Please edit documentation in R/lsDownload.R
 \name{lsDownload}
 \alias{lsDownload}
-\title{Search and download Landsat-7 or Landsat-8 images}
+\title{Download Landsat-7 or Landsat-8 images from a search list}
 \usage{
-lsDownload(satellite, startDate, endDate, username, password, AppRoot,
+lsDownload(searchres, username = NULL, password = NULL, AppRoot,
   lvl = 1, product = c("sr", "source_metadata"), verbose = FALSE,
-  untar = TRUE, raw.rm = FALSE, ...)
+  raw.rm = FALSE, untar = FALSE, overwrite = FALSE, nattempts = 5,
+  l2rqname, ...)
 }
 \arguments{
-\item{satellite}{string containing the type of satellite 
-(\code{"ls7"} or \code{"ls8"}).}
+\item{searchres}{the results from \code{\link{ls7Search}} or 
+\code{\link{ls8Search}}.}
 
-\item{startDate}{a \code{Date} class object with the starting date of the 
-study period.}
+\item{username}{USGS's `EarthExplorer' username.}
 
-\item{endDate}{a \code{Date} class object with the ending date of the 
-study period.}
-
-\item{username}{USGS’s `EarthExplorer' username.}
-
-\item{password}{USGS’s `EarthExplorer' password.}
+\item{password}{USGS's `EarthExplorer' password.}
 
 \item{AppRoot}{the download directory.}
 
 \item{lvl}{a number specifying the processing level. Default value, 1.}
 
 \item{product}{\code{character} vector with the requested Level-2 products.
-By default \code{c("sr", "source_metadata")}.}
+By default \code{c("sr","source_metadata")}.}
 
-\item{verbose}{logical argument. If \code{TRUE}, the function prints the
+\item{verbose}{logical argument. If \code{TRUE}, the function prints the 
 running steps and warnings.}
-
-\item{untar}{logical argument. If \code{TRUE}, untars downloaded images.}
 
 \item{raw.rm}{logical argument. If \code{TRUE}, removes the raw images.}
 
-\item{...}{argumetns for nested functions:
+\item{untar}{logical argument. If \code{TRUE}, untars downloaded images.}
+
+\item{overwrite}{logical argument. If \code{TRUE}, overwrites the existing
+images with the same name.}
+
+\item{nattempts}{the number of attempts to download an image in case it
+becomes corrupted.}
+
+\item{l2rqname}{character argument defining the name of the order for level
+2 products.}
+
+\item{...}{arguments for nested functions.
  \itemize{
-  \item any argument for \code{\link{ls8Search}}/\code{\link{ls7Search}} or 
-  \code{\link{lsDownSearch}}.
+       \item \code{dates} a vector with the capturing dates being considered
+  for downloading. 
+       \item \code{bFilter} a vector with the bands to be extracted when \code{untar=TRUE}. If not
+  supplied, all bands are extracted.
 }}
 }
 \value{
@@ -48,44 +54,105 @@ this function does not return anything. It saves the imagery as
  \code{AppRoot} directory.
 }
 \description{
-\code{lsDonwload} searches and downloads Landsat-7 or Landsat-8 images
-concerning a particular location and time interval from the 
-\href{https://earthexplorer.usgs.gov/}{`EarthExplorer' repository}.
-Images are saved as GTiff files in the \code{AppRoot} directory.
+\code{lsDownload} downloads the results from \code{\link{ls7Search}} and
+\code{\link{ls8Search}} functions. The images are saved as GTiff files in the
+\code{AppRoot} directory.
 }
 \details{
-\code{lsDonwload} is a wrapper function of \code{\link{ls7Search}}, 
-\code{\link{ls8Search}}, and \code{\link{lsDownSearch}} to search and
-download images in a single step. The function requires USGS's `EarthExplorer'
-credentials, which can be obtained
+\code{lsDonwSearch} downloads the list of URLs provided by \link{ls7Search}
+or \link{ls8Search} as a \code{data.frame}. The function requires an USGS's
+`EarthExplorer' account, which can be obtained 
 \href{https://ers.cr.usgs.gov/register/}{here}.
 
-The files from `EarthExplorer' are compressed as ‘tar.gz’. \code{lsDonwload}
-decompresses the images and obtains the corresponding GTiffs. The GTiffs are
-saved in the \code{AppRoot} directory. To change this option, provide 
-\code{AppRoot = “full path”}. When the \code{untarDir} argument is defined,
-the function untars the imagery in this location. Image decompression
-duplicates the information due to the presence of both, compressed and 
-decompressed images. Set \code{raw.rm = TRUE} to remove the former ones.
+The files from `EarthExplorer' are compressed as ‘tar.gz’. \code{lsDownload}
+decompresses the images and obtains the corresponding GTiffs. The GTiff files
+are saved in the \code{AppRoot} directory. To change this option, provide
+\code{AppRoot = “full path”}. When \code{untar = TRUE}, the function
+decompresses the imagery. When only a subset of bands is required, band names
+can be provided through the \code{bFilter} argument. The band names are 
+specified by string “band” and the band number (e.g., “band1”). Image
+decompression duplicates the information due to the presence of both,
+compressed and decompressed images. Set \code{raw.rm = TRUE} to remove former
+ones.
 }
 \examples{
 \dontrun{
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
+
 # search and download the images from Landsat-8 between
-# 01-01-2018 and 20-01-2018 for the region of Navarre
-lsDownload(satellite = "ls8",
-           username = "username",
+# 2011 and 2013 in the region of Navarre
+sres <- ls8Search(startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
+                  endDate = as.Date("20-01-2018", "\%d-\%m-\%Y"),
+                  extent = ex.navarre,
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
+
+# download 1 image
+lsDownload(searchres = sres[1,], 
+           username = "username", 
+           password = "password", 
+           AppRoot = wdir,
+           untar = TRUE)
+# download 4 images
+lsDownload(searchres = sres[1:4,], 
+           username = "username", 
            password = "password",
-           startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
-           endDate = as.Date("20-01-2018", "\%d-\%m-\%Y"),
-           extent = ex.navarre,
-           AppRoot = src)
-           
-# remove metadata to free memory space
+           AppRoot = wdir, 
+           untar = TRUE)
+# download all the images
+lsDownload(searchres = sres, 
+           username = "username", 
+           password = "password",
+           AppRoot = wdir,
+           untar = TRUE)
+
+# search and download the images from Landsat-7 between
+# 2011 and 2013 in the region of Navarre
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
+sres <- ls7Search(startDate = as.Date("01-01-2018", "\%d-\%m-\%Y"),
+                  endDate = as.Date("20-01-2018", "\%d-\%m-\%Y"),
+                  extent = ex.navarre,
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
+# download 1 image
+lsDownload(searchres = sres[1,], 
+           username = "username", 
+           password = "password", 
+           untar = TRUE,
+           AppRoot = wdir)
+# download 4 images
+lsDownload(searchres = sres[1:4,], 
+           username = "username", 
+           password = "password", 
+           untar = TRUE, 
+           AppRoot = wdir)
+# download all the images
+lsDownload(searchres = sres, 
+           username = "username", 
+           password = "password", 
+           untar = TRUE, 
+           AppRoot = wdir)
+
+# removes the metadata to free memory space
 lsRemoveMetadata()
+
+# select Landsat-7 RGB bands
+wdir.ls7 <- file.path(wdir,"Landsat7")
+files.ls7 <- list.files(wdir.ls7, 
+                        pattern = "\\\\.TIF$", 
+                        full.names = TRUE, 
+                        recursive = TRUE)[c(6,5,4)]
+files.ls7.rgb <- stack(files.ls7)
+qrange <- c(0.001, 0.999)
+img.ls7.rgb <- varRGB(files.ls7.rgb[[1]], 
+                      files.ls7.rgb[[2]],
+                      files.ls7.rgb[[3]],
+                      qrange)
+plotRGB(img.ls7.rgb)
 }
 }

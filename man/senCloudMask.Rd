@@ -4,7 +4,7 @@
 \alias{senCloudMask}
 \title{Create cloud masks for Sentinel-2 images}
 \usage{
-senCloudMask(src, AppRoot, img.res, sensitivity = 50,
+senCloudMask(src, AppRoot, out.name, resbands, sensitivity = 50,
   overwrite = FALSE, ...)
 }
 \arguments{
@@ -12,8 +12,11 @@ senCloudMask(src, AppRoot, img.res, sensitivity = 50,
 
 \item{AppRoot}{the directory where the cloud masks are saved.}
 
-\item{img.res}{a \code{character} vector argument. Defines the band resolution
-used to create the cloud mask. Ex "20m" or "30m".}
+\item{out.name}{the name of the folder that stores the outputs. 
+If the arguemnt is not defined the folder will be named as "CloudMask".}
+
+\item{resbands}{a \code{character} vector argument. Defines the band resolution
+used to create the cloud mask. Ex "20m" or "60m".}
 
 \item{sensitivity}{a \code{numeric} argument. Defines the sensitivity of the
 cloud detection method.}
@@ -21,11 +24,19 @@ cloud detection method.}
 \item{overwrite}{logical argument. If \code{TRUE}, overwrites the existing
 images with the same name.}
 
-\item{...}{arguments for nested functions.}
+\item{...}{arguments for nested functions.
+ \itemize{
+  \item \code{dates} a vector with the capturing dates being considered
+  for mosaicking. If not supplied, all dates are mosaicked.
+}}
+}
+\value{
+this function does not return anything. It saves the cloud masks (CLD)
+as GTiff files in the \code{AppRoot} directory.
 }
 \description{
 \code{senCloudMask} creates cloud masks derived from the cloud probability
-band (\code{CLDPROB}) band from the "\code{S2MSI2A}" product.
+band (\code{CLDPRB}) band from the "\code{S2MSI2A}" product.
 }
 \details{
 The valid threshold range for \code{sensitivity} is 0-100. By default,
@@ -37,57 +48,57 @@ the argument is set to 50.
 data(ex.navarre)
 # Download S2MSI1C products sensed by Sentinel-2 
 # between the julian days 210 and 218, 2018
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
-senDownload(startDate = as.Date("2018210", "\%Y\%j"),
-            endDate = as.Date("2018218", "\%Y\%j"),
-            platform = "Sentinel-2",
-            extent = ex.navarre,
-            product = "S2MSI2A",
-            pathrow = c("R094"),
-            username = "username",
-            password = "password",
-            AppRoot = src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
+senDownSearch(startDate = as.Date("2018210", "\%Y\%j"),
+              endDate = as.Date("2018218", "\%Y\%j"),
+              platform = "Sentinel-2",
+              extent = ex.navarre,
+              product = "S2MSI2A",
+              pathrow = c("R094"),
+              username = "username",
+              password = "password",
+              AppRoot = wdir)
 # define the paths to the Sentinle-2 images and the
 # folder with the unzipped images
-src.sen2 <- file.path(src, "Sentinel-2")
-src.unzip <- file.path(src.sen2, "unzip")
+wdir.sen <- file.path(wdir, "Sentinel-2")
+wdir.sen.unzip <- file.path(wdir.sen, "unzip")
 # mosaic the Sentinel-2 images
-senMosaic(src.unzip,
-          AppRoot = src.sen2,
+senMosaic(wdir.sen.unzip,
+          AppRoot = wdir.sen,
           gutils = TRUE,
           out.name = "Navarre")
           
 # calculate the cloud mask
-src.navarre <- file.path(src.sen2, "Navarre")
-senCloudMask(src = src.navarre,
-             img.res = "60m",
+wdir.sen.navarre <- file.path(wdir.sen, "Navarre")
+senCloudMask(src = wdir.sen.navarre,
+             resbands = "60m",
              overwrite = TRUE,
              sensitivity = 98,
-             AppRoot = src.sen2)
+             AppRoot = wdir.sen)
              
 # define the path for the Sentinel-2 cloud mask
-src.cloud <- file.path(src.sen2, "CloudMask")
+wdir.sen.cloud <- file.path(wdir.sen, "CloudMask")
 
 # select B02 images of 60 meters
-tiles.navarre <- list.files(src.navarre,
+tiles.sen.navarre <- list.files(wdir.sen.navarre,
                             full.names = TRUE,
                             recursive = TRUE,
                            pattern = "\\\\.tif$")
-b2.tiles <- tiles.navarre[grepl("B02",tiles.navarre)]
-b2.tiles <- b2.tiles[grepl("60m",b2.tiles)]
+tiles.sen.navarre.b2 <- tiles.sen.navarre[grepl("B02",tiles.sen.navarre)]
+tiles.sen.navarre.b2 <- tiles.sen.navarre.b2[grepl("60m",tiles.sen.navarre.b2)]
 
 # generate a 60-meter resolution cloud mask 
-cloud.tiles <- list.files(src.cloud,
-                          full.names = TRUE,
-                          pattern = "\\\\.tif$")
-cloud.tiles <- cloud.tiles[grepl("60m",cloud.tiles)]
+tiles.sen.cloud <- list.files(wdir.sen.cloud,
+                              full.names = TRUE,
+                              pattern = "\\\\.tif$")
+tiles.sen.cloud.60 <- tiles.sen.cloud[grepl("60m",tiles.sen.cloud)]
 
 # remove the cloud mask from b02 tiles
-b2.tiles.stack <- stack(b2.tiles)
-cloud.tiles.stack <- stack(cloud.tiles)
-b2.cloud.free <- b2.tiles.stack*cloud.tiles.stack
+img.sen.navarre.b2 <- stack(tiles.sen.navarre.b2)
+img.sen.cloud.60 <- stack(tiles.sen.cloud.60)
+img.sen.navarre.b2.cloud.free <- img.sen.navarre.b2*img.sen.cloud.60
 # plot b2 cloud free layers
-spplot(b2.cloud.free)
+spplot(img.sen.navarre.b2.cloud.free)
 }
 }

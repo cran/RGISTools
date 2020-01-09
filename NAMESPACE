@@ -1,7 +1,6 @@
 export(genCompositions,genSmoothingCovIMA,genFilterStack,
        genGetDates,senGetDates,lsGetDates,modGetDates,
-       genLimitRasterRange,genMosaicList,genPlotGIS,
-       genSaveTSRData,genSmoothingIMA,ls7FolderToVar,
+       genMosaicList,genPlotGIS, genSaveTSRData,genSmoothingIMA,ls7FolderToVar,
        ls7LoadMetadata,ls7Search,ls8FolderToVar,lsMosaic,
        ls8LoadMetadata,lsRemoveMetadata,ls8Search,lsGetPathRow,lsPreview,modGetPathRow,
        lsDownload,lsDownSearch,modExtractHDF,modFolderToVar,modDownload,
@@ -11,12 +10,13 @@ export(genCompositions,genSmoothingCovIMA,genFilterStack,
        varNBR2,varNDMI,varNDVI,varNDWI,varRGB,varSAVI,lsCloudMask,senCloudMask,modCloudMask,
        lsEspaOrderImages,lsEspaGetOrderImages,lsEspaUpdateOrders,lsEspaDownloadOrders)
 import("raster","curl", "rjson","rvest", "urltools","tools",
-       "fields", "gdalUtils", "magick")
-importFrom("methods", "formalArgs")
+       "fields","sf","tmap")
+importFrom("stats", "na.omit")
+importFrom("mapview","viewRGB")
+importFrom("methods", "formalArgs","as", "is")
 importFrom("httr","POST","authenticate")
-importFrom("sp","bbox","layout.scale.bar","layout.north.arrow",
-           "proj4string","spplot","Polygons","Polygon",
-           "SpatialPolygons","CRS","spTransform")
+importFrom("sp","layout.scale.bar","layout.north.arrow"
+           ,"spplot")
 importFrom("XML","xmlNativeTreeParse","xmlSApply",
            "xmlValue","xmlRoot")
 importFrom("xml2","read_xml","xml_attr",

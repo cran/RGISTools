@@ -7,8 +7,8 @@
 senGetOrbit(str)
 }
 \arguments{
-\item{str}{the full path or official image name of the Sentinel image from
-which the relative orbit is extracted.}
+\item{str}{the full path(s) or official name(s) of the Sentinel images from
+which the orbits are retrieved.}
 }
 \value{
 an string with the relative orbit of the image in "\code{NXXXX_RYYY}"
@@ -16,14 +16,18 @@ or "\code{RYYY}" format, depending on the version of name convention.
 }
 \description{
 \code{senGetOrbit} reads the official name of a Sentinel image and returns 
-relative orbit. Get relative orbit information 
+relative orbit, in "\code{NXXXX_RYYY}" or "\code{RYYY}" format (Sentinel
+namig convention).
+}
+\details{
+Get information about the relative orbits
 \href{https://sentinel.esa.int/web/sentinel/missions/sentinel-2/satellite-description/orbit}{here}.
 }
 \examples{
 #example of getting date from Sentinel2 image name
-str <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
-         "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
-pr <- senGetOrbit(str)
-print(pr)
+files.sen <- c("S2A_MSIL1C_20170102T111442_N0204_R137_T30TWN_20170102T111441.SAFE",
+               "S2A_OPER_PRD_MSIL1C_PDMC_20160308T090616_R094_V20160305T110109_20160305T110109")
+tile.sen <- senGetOrbit(files.sen)
+print(tile.sen)
 
 }

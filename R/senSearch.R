@@ -10,9 +10,9 @@
 #' \href{http://scihub.copernicus.eu}{ESA's powered API} (`SciHub').The catalogue
 #' of Sentinel-2 products can be found
 #' \href{https://sentinel.esa.int/web/sentinel/missions/sentinel-2/data-products}{here}.
-#' Images are searched within a range of dates and a region of interest. Dates
-#' must be provided as a \code{Date} class object. Credentials from ESA’s `SciHub'
-#' are needed and they can be obtained 
+#' The function explores the images available for a specific location and 
+#' time-span. Dates must be provided as \code{Date} class objects. Credentials
+#' from ESA’s `SciHub' are needed and they can be obtained 
 #' \href{https://scihub.copernicus.eu/dhus/#/self-registration}{here}.
 #' 
 #' @param username ESA’s `SciHub' username.
@@ -21,15 +21,24 @@
 #' \itemize{
 #'   \item \code{product} the type of Sentinel product.  Ex. "S2MSI1C",
 #'   "S2MSI2A", "S2MSI2Ap", ...
-#'   \item \code{startDate} a \code{Date} class object with the starting date of
-#'   the study period.
-#'   \item \code{endDate} a \code{Date} class object with the ending date of
-#'    the study period.
+#'   \item \code{dates} a vector with the capturing dates being searched. This
+#'   argument is mandatory if \code{startDate} and \code{endDate} are not defined.
+#'   \item  \code{startDate} a \code{Date} class object with the starting date of the 
+#' study period. This argument is mandatory if 
+#'   \code{dates} is not defined.
+#'   \item  \code{endDate} a \code{Date} class object with the ending date of the 
+#' study period. This argument is mandatory if 
+#'   \code{dates} is not defined.
+#'   \item \code{region} a \code{Spatial*}, projected \code{raster*}, or 
+#'   \code{sf} class object defining the area of interest. This argument is
+#'   mandatory if \code{extent} or \code{lonlat} are not defined.
 #'   \item \code{extent} an \code{extent}, \code{Raster*}, or \code{Spatial*}
 #'   object representing the region of interest with longitude/latitude
-#'   coordinates.
+#'   coordinates. This argument is mandatory if \code{region} or \code{lonlat}
+#'   are not defined.
 #'   \item \code{lonlat} a vector with the longitude/latitude
-#'   coordinates of the point of interest.
+#'   coordinates of the point of interest. This argument is mandatory if 
+#'   \code{region} or \code{extent} are not defined.
 #'   \item \code{platform} the name of the Sentinel mission ("Sentinel-1", 
 #'   "Sentinel-2", ...).
 #'   \item \code{qformat} the format of the response.
@@ -41,23 +50,39 @@
 #' # load a spatial polygon object of Navarre
 #' data(ex.navarre)
 #' # perform the search query
-#' searchres <- senSearch(startDate = as.Date("2018210", "%Y%j"),
-#'                        endDate = as.Date("2018218", "%Y%j"),
-#'                        platform = "Sentinel-2",
-#'                        extent = ex.navarre,
-#'                        product = "S2MSI1C",
-#'                        username = "username",
-#'                        password = "password")
-#' head(searchres)
+#' sres <- senSearch(startDate = as.Date("2018210", "%Y%j"),
+#'                   endDate = as.Date("2018218", "%Y%j"),
+#'                   platform = "Sentinel-2",
+#'                   extent = ex.navarre,
+#'                   product = "S2MSI1C",
+#'                   username = "username",
+#'                   password = "password")
+#' head(sres)
 #' }
 senSearch<-function(username,
                     password,
                     ...){
-  arg<-list(...)
+  arg=list(...)
+  if((!"dates"%in%names(arg))&
+     ((!"startDate"%in%names(arg)|(!"endDate"%in%names(arg))))
+  )stop("startDate and endDate, or dates argument need to be defined!")
+  
+  if("startDate"%in%names(arg)){
+    startDate<-arg$startDate
+    endDate<-arg$endDate
+  }else{
+    stopifnot(class(arg$dates)=="Date")
+    startDate<-min(arg$dates)
+    endDate<-max(arg$dates)
+  }
+  
+  #stopifnot(class(startDate)=="Date")
+  #stopifnot(class(endDate)=="Date")
+  
   if(!"verbose"%in%names(arg)){
     arg$verbose=FALSE
   }
-  query.url<-senSearchQuery(...)
+  query.url<-senSearchQuery(startDate=startDate,endDate=endDate,...)
 
   if(arg$verbose)
     message(query.url)
@@ -88,14 +113,23 @@ senSearch<-function(username,
   if(as.integer(json$feed$`opensearch:totalResults`)>0){
     imgNames<-c()
     imgURL<-c()
-    for(i in json$feed$entry){
+    if(as.integer(json$feed$`opensearch:totalResults`)==1){
       if(arg$verbose){
-        message(paste0("Image result ",cont," Name:",i$title))
-        message(paste0("Image result ",cont," Url:",i$link[[1]]$href))#each entry have 3 links: 1-image link, 2-meta data link, 3-quicklook mini image
+        message(paste0("Image result ",cont," Name:",json$feed$entry$title))
+        message(paste0("Image result ",cont," Url:",json$feed$entry$link[[1]]$href))#each entry have 3 links: 1-image link, 2-meta data link, 3-quicklook mini image
       }
-      imgNames<-c(imgNames,i$title)
-      imgURL<-c(imgURL,i$link[[1]]$href)
-      cont<-cont+1
+      imgNames<-c(imgNames,json$feed$entry$title)
+      imgURL<-c(imgURL,json$feed$entry$link[[1]]$href)
+    }else{
+      for(i in json$feed$entry){
+        if(arg$verbose){
+          message(paste0("Image result ",cont," Name:",i$title))
+          message(paste0("Image result ",cont," Url:",i$link[[1]]$href))#each entry have 3 links: 1-image link, 2-meta data link, 3-quicklook mini image
+        }
+        imgNames<-c(imgNames,i$title)
+        imgURL<-c(imgURL,i$link[[1]]$href)
+        cont<-cont+1
+      }
     }
     if(arg$verbose)
       message(paste0("Results added to the list: ",cont))
@@ -121,11 +155,19 @@ senSearch<-function(username,
     }
     rURLs<-senSearch(username=username,
                      password=password,
-                     #startDate=max(senGetDates(imgNames)),
+                     startDate=startDate,
                      endDate=mn.date,
+                     rec=TRUE,
                       ...)
     imgURL<-c(imgURL,rURLs)
     imgURL<-imgURL[!duplicated(imgURL)]
   }
+  
+  #filter dates
+  if("dates"%in%names(arg)){
+    dates<-senGetDates(names(imgURL))
+    imgURL<-imgURL[dates%in%arg$dates]
+  }
+  
   return(imgURL)
 }

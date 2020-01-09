@@ -4,16 +4,9 @@
 \alias{ls7Search}
 \title{Search Landsat-7 images}
 \usage{
-ls7Search(startDate, endDate, AppRoot, verbose = FALSE,
-  precise = FALSE, ...)
+ls7Search(AppRoot, verbose = FALSE, precise = FALSE, ...)
 }
 \arguments{
-\item{startDate}{a \code{Date} class object with the starting date of the 
-study period.}
-
-\item{endDate}{a \code{Date} class object with the ending date of the 
-study period.}
-
 \item{AppRoot}{directory of the metadata file.}
 
 \item{verbose}{logical argument. If \code{TRUE}, the function prints the 
@@ -24,16 +17,29 @@ tile by tile (slower).}
 
 \item{...}{arguments for nested functions:
  \itemize{
+  \item \code{dates} a vector with the capturing dates being searched. This
+  argument is mandatory if \code{startDate} and \code{endDate} are not defined.
+  \item  \code{startDate} a \code{Date} class object with the starting date of the 
+study period. This argument is mandatory if 
+  \code{dates} is not defined.
+  \item  \code{endDate} a \code{Date} class object with the ending date of the 
+study period. This argument is mandatory if 
+  \code{dates} is not defined.
+  \item \code{region} a \code{Spatial*}, projected \code{raster*}, o
+  r \code{sf} class object defining the area of interest. This argument is
+  mandatory if \code{pathrow}, \code{extent}, or \code{lonlat} are not defined.
   \item \code{pathrow} a list of vectors with the path and row numbers of
   the tiles concerning the region of interest. This argument is mandatory
-  if \code{extent} or \code{lonlat} are not provided. Ex. 
+  if \code{region}, \code{extent} or \code{lonlat} are not provided. Ex. 
   \code{list(c(200,31),c(200,30))}.
   \item \code{lonlat} a vector with the longitude/latitude
   coordinates of the point of interest. Ex. \code{c(-1.64323,42.81687)}.
+  This argument is mandatory if \code{region}, \code{pathrow}, or \code{lonlat}
+  are not defined.
   \item \code{extent} an \code{extent}, \code{Raster*}, or 
   \code{Spatial*} object representing the region of interest with 
   longitude/latitude coordinates. This argument is mandatory if 
-  \code{pathrow} or \code{lonlat} are not defined.
+  \code{region}, \code{pathrow} or \code{lonlat} are not defined.
   
   \item column names in the .LS7MD \code{data.frame} and their values.
 }}
@@ -50,16 +56,18 @@ a particular location and date interval. The function returns a
 \code{ls7Search} searches images in the metadata file. If the metadata was
 downloaded before to the current directory, \code{ls7Search} will use this
 metadata by default. In case the metadata was not downloaded before, 
-\code{ls7Search} will make that call for you.
+\code{ls7Search} will make that call for you. The function creates the
+following subfolders "Landsat-8/metadata", where the metadata file is
+located.
 
 Landsat images are organized by tiles, which have a unique path and row
 numbers according to the
 \href{https://landsat.gsfc.nasa.gov/the-worldwide-reference-system/}{Worldide Reference System}.
 The fastest way to search an image in the metadata file is by path and row
 (\code{pathrow}). This method requires to know in advance the path and row
-number of the tile that is relevant for your region of interest. From the
+numbers of the tile that is relevant for your region of interest. From the
 user's standpoint, the simplest way to search a time series of Landsat-7
-images is by \code{extent}, \code{lonlat} or \code{polygon}, since they do 
+images is by \code{region}, \code{extent}, or \code{lonlat}, since they do 
 not require any prior knowledge about the tiles.
 
 The function can screen the results by any other attribute in the metadata.
@@ -69,38 +77,38 @@ For instance, to filter the imagery with an available preview, the
 }
 \examples{
 \dontrun{
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
 # search by path and row numbers of a tile
-search.res <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                        endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
-                        pathrow = list(c(200,31),c(200,30)),
-                        browseAvaliable = "Y",
-                        AppRoot = src)
+sres <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
+                  pathrow = list(c(200,31),c(200,30)),
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
                   
 # search by point coordinates (long/lat coordinates)
-search.res <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                        endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
-                        lonlat = c(-1.64323,42.81687),
-                        browseAvaliable = "Y",
-                        AppRoot = src)
+sres <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
+                  lonlat = c(-1.64323,42.81687),
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
                   
 # search by extent (long/lat coordinates)
 # load a spatial polygon object of Navarre
 data(ex.navarre)
-search.res <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
-                        endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
-                        extent = ex.navarre,
-                        precise = TRUE,
-                        browseAvaliable = "Y",
-                        AppRoot = src)
+sres <- ls7Search(startDate = as.Date("01-01-2011", "\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013", "\%d-\%m-\%Y"),
+                  extent = ex.navarre,
+                  precise = TRUE,
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
 
 # search by extent (fast mode)
-search.res <- ls7Search(startDate = as.Date("01-01-2011","\%d-\%m-\%Y"),
-                        endDate = as.Date("31-12-2013","\%d-\%m-\%Y"),
-                        extent = ex.navarre,
-                        precise = FALSE,
-                        browseAvaliable = "Y",
-                        AppRoot = src)
+sres <- ls7Search(startDate = as.Date("01-01-2011","\%d-\%m-\%Y"),
+                  endDate = as.Date("31-12-2013","\%d-\%m-\%Y"),
+                  extent = ex.navarre,
+                  precise = FALSE,
+                  browseAvaliable = "Y",
+                  AppRoot = wdir)
 # remove metadata to free memory space
 lsRemoveMetadata()
 }

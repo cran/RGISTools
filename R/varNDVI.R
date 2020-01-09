@@ -4,8 +4,8 @@
 #' from the red an near-infrared (NIR) bands.
 #'
 #' The normalized difference vegetation index (NDVI) is the most widely used 
-#' index for monitoring vegetation dynamics. The NDVI reflex vegetation vigour
-#' and it is closed related to the amount of photosynthetically active radiation
+#' index for monitoring vegetation dynamics. The NDVI reflects the vegetation vigour
+#' and it is closely related to the amount of photosynthetically active radiation
 #' absorbed \insertCite{rouse1972monitoring}{RGISTools}. This function is used
 #' within \code{\link{ls7FolderToVar}}, \code{\link{ls8FolderToVar}},
 #' \code{\link{modFolderToVar}} and \code{\link{senFolderToVar}}.
@@ -19,19 +19,19 @@
 #'
 #' @examples
 #' # path to the cropped and cutted MODIS images for the region of Navarre
-#' img.dir <- system.file("ExNavarreVar", package = "RGISTools")
+#' wdir <- system.file("ExNavarreVar", package = "RGISTools")
 #' # list all the tif files
-#' img.files <- list.files(img.dir, pattern="\\.tif$", recursive = TRUE, full.names = TRUE)
+#' files.mod <- list.files(wdir, pattern="\\.tif$", recursive = TRUE, full.names = TRUE)
 #' # print the MOD09 bands
 #' getRGISToolsOpt("MOD09BANDS")
 #' 
 #' # select the red and NIR bands
-#' red <- raster(img.files[1])
-#' nir <- raster(img.files[2])
+#' img.mod.red <- raster(files.mod[1])
+#' img.mod.nir <- raster(files.mod[2])
 #' # calculate the NDVI image
-#' ndvi <- varNDVI(red,nir)
+#' img.mod.ndvi <- varNDVI(img.mod.red,img.mod.nir)
 #' # plot the image
-#' spplot(ndvi,col.regions=rev(terrain.colors(20)))
+#' spplot(img.mod.ndvi,col.regions=rev(terrain.colors(20)))
 varNDVI<-function(red, nir){
   ndvi <- (nir - red) / (nir + red)
   return(ndvi)

@@ -4,21 +4,29 @@
 \alias{genCompositions}
 \title{Create image compositions from a time series of satellite images}
 \usage{
-genCompositions(rstack, n, fun, by.days = FALSE, ...)
+genCompositions(rstack, by, fun, n, by.days = FALSE, verbose = FALSE,
+  ...)
 }
 \arguments{
 \item{rstack}{a \code{RasterStack}, where layer names contain the capturing
 date of an image in "\code{YYYYJJJ}" format.}
 
-\item{n}{number of images combined in the aggregation.}
+\item{by}{character argument. Accepts \code{"month"} or \code{"year"} for creating monthly
+or yearly composites. Only required if \code{n} is provided.}
 
 \item{fun}{the function used to create the composite, such as \code{max},
 \code{min}, \code{mean}, ...}
+
+\item{n}{number of images combined in the aggregation. Only required if 
+\code{by} is not provided.}
 
 \item{by.days}{logical argument. If \code{FALSE}, \code{n} indicates the 
 number of consucutive images being aggregated. If \code{TRUE}, the function
 aggregates the imagery within every \code{n} days. The aggregation requires
 at least one image avaiable.}
+
+\item{verbose}{logical argument. If \code{TRUE}, the function prints
+the running steps and warnings.}
 
 \item{...}{arguments for nested functions:
 \itemize{

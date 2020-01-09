@@ -12,16 +12,16 @@ lsRemoveMetadata()
 }
 \details{
 The metadata file is loaded in `R' with \code{\link{ls7Search}}, 
-\code{\link{ls8Search}} and \code{\link{lsDownload}}. \code{lsRemoveMetadata}
+\code{\link{ls8Search}} and \code{\link{lsDownSearch}}. \code{lsRemoveMetadata}
 removes the metadata and frees up valuable RAM.
 }
 \examples{
 \dontrun{
 # creates a MetaData folder and downloads the csv file
 # in the current working directory
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
-ls8LoadMetadata(AppRoot = src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
+ls8LoadMetadata(AppRoot = wdir)
 lsRemoveMetadata()
 }
 }

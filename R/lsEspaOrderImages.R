@@ -36,18 +36,19 @@
 #' @param product the acronym of the requested product (see the details).
 #' @param verbose logical argument. If \code{TRUE}, the function prints the
 #' running steps and warnings.
-#'
+#' @return this function does not return anything. It makes a petition to
+#' process level-1 images before doing the download.
 #' @examples
 #' \dontrun{
-#' src <- paste0(tempdir(),"/Path_for_downloading_folder")
+#' wdir <- file.path(tempdir(),"Path_for_downloading_folder")
 #' # search Landsat 7 level-1
-#' search.res <- ls7Search(startDate = as.Date("01-01-2017", "%d-%m-%Y"),
-#'                         endDate = as.Date("07-01-2017", "%d-%m-%Y"),
-#'                         lonlat = c(-1.64323, 42.81687),
-#'                         AppRoot = src)
+#' sres <- ls7Search(startDate = as.Date("01-01-2017", "%d-%m-%Y"),
+#'                   endDate = as.Date("07-01-2017", "%d-%m-%Y"),
+#'                   lonlat = c(-1.64323, 42.81687),
+#'                   AppRoot = wdir)
 #' # request to ESPA the pre-pocessing of level-1 images 
 #' # to get the surface reflectance
-#' order <- lsEspaOrderImages(search.res = search.res,
+#' order <- lsEspaOrderImages(search.res = sres,
 #'                            username = "username", 
 #'                            password = "password", 
 #'                            product = 'sr',
@@ -111,7 +112,7 @@ lsEspaOrderImages<-function(search.res,username,password,product=c("sr","source_
                       body = as.character(query))
     if(verbose){message(paste0("ESPA Order: \n",res))}
     #print the response
-    message(data.frame(fromJSON(rawToChar(res$content))))
+    #message(data.frame(fromJSON(rawToChar(res$content))))
   }
   if(verbose)message(paste0("Check the orders in ",getRGISToolsOpt("LS.ESPA.API"),getRGISToolsOpt("LS.ESPA.API.v"),"/list-orders"))
 }

@@ -28,14 +28,23 @@ running steps and warnings.}
 when the imagery comes from the Senintel-2 "\code{S2MSI2A}" product. By 
 default, all resolutions (10m, 20m, and 60m) are used.}
 
-\item{...}{arguments for nested functions.}
+\item{...}{arguments for nested functions.
+ \itemize{
+  \item \code{dates} a vector with the capturing dates being considered
+  for mosaicking. If not supplied, all dates are mosaicked.
+}}
+}
+\value{
+this function does not return anything, unless \code{getStack = TRUE}
+which then returns a \code{RasterStack} with the time series of with the
+index.
 }
 \description{
 \code{senFolderToVar} computes a remote sensing index from the spectral bands
 of a time series of Sentinel-2 images. The images are specified by the path to
 the folder that stores the imagery (resulting from the \code{\link{senMosaic}} 
-function). The function returns a \code{RasterStack} with a time series of 
-images with the index.
+function). The function returns a \code{RasterStack}  with a time series of 
+images of the remote sensing index.
 }
 \details{
 The function requires the definition of the \code{src} and \code{fun} 
@@ -51,42 +60,42 @@ If \code{fun = varRGB}, then the argument \code{getStack} must be equal to
 # load a spatial polygon object of Navarre
 data(ex.navarre)
 # main output directory
-src <- paste0(tempdir(),"/Path_for_downloading_folder")
-print(src)
+wdir <- file.path(tempdir(),"Path_for_downloading_folder")
+print(wdir)
 # download Sentinel-2 images
-senDownload(startDate = as.Date("2018210","\%Y\%j"),
-            endDate = as.Date("2018218","\%Y\%j"),
-            platform = "Sentinel-2",
-            extent = ex.navarre,
-            product = "S2MSI1C",
-            pathrow = c("R094"),
-            username = "username",
-            password = "password",
-            AppRoot = src)
+senDownSearch(startDate = as.Date("2018210","\%Y\%j"),
+              endDate = as.Date("2018218","\%Y\%j"),
+              platform = "Sentinel-2",
+              extent = ex.navarre,
+              product = "S2MSI1C",
+              pathrow = c("R094"),
+              username = "username",
+              password = "password",
+              AppRoot = wdir)
 # folder with the unzipped images from Sentinel-2
-src.sen <- file.path(src,"Sentinel-2")
-src.unzip <- file.path(src.sen, "unzip")
+wdir.sen <- file.path(wdir,"Sentinel-2")
+wdir.sen.unzip <- file.path(wdir.sen, "unzip")
 # mosaic the Sentinel-2 images
-senMosaic(src.unzip,
-          AppRoot = src.sen,
+senMosaic(wdir.sen.unzip,
+          AppRoot = wdir.sen,
           gutils = TRUE,
           out.name = "Navarre")
 # path to the folder with the mosaicked images
-src2 <- file.path(src.sen, "Navarre")
-src3 <- file.path(src.sen, "Navarre_Variables")
-dir.create(src3)
+wdir.sen.navarre <- file.path(wdir.sen, "Navarre")
+wdir.sen.var <- file.path(wdir.sen.navarre, "Navarre_Variables")
+dir.create(wdir.sen.var)
 # generate EVI images of Navarre
-senFolderToVar(src2,
+senFolderToVar(wdir.sen.navarre,
                fun = varEVI,
                resbands = c("60m"),
-               AppRoot = src3)
+               AppRoot = wdir.sen.var)
                
-flist <- list.files(file.path(src3,"EVI"),
-                    pattern = "\\\\.tif$",
-                    full.names = TRUE,
-                    recursive = TRUE)
+files.sen.evi <- list.files(file.path(wdir.sen.var,"EVI"),
+                            pattern = "\\\\.tif$",
+                            full.names = TRUE,
+                            recursive = TRUE)
 
-files.raster <- lapply(flist, raster)
-spplot(files.raster[[1]])
+img.sen.evi <- lapply(files.sen.evi, raster)
+spplot(img.sen.evi[[1]])
 }
 }
