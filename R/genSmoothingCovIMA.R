@@ -18,6 +18,7 @@
 #'  "\code{YYYYJJJ}" format.
 #' @param cStack a \code{RasterStack} class argument containing a time series of
 #' covariates.
+#' @param r.dates a \code{vector} argument containing the dates of the layers in rstack 
 #' @param Img2Process a \code{vector} class argument defining the images to be
 #' filled/smoothed.
 #' @param nDays a \code{numeric} argument with the number of previous and 
@@ -43,6 +44,7 @@
 #' @return a \code{RasterStack} with the filled/smoothed images. 
 #'
 #' @examples
+#' \dontrun{
 #' set.seed(0)
 #' # load example ndvi and dem data of Navarre
 #' data(ex.ndvi.navarre)
@@ -65,18 +67,20 @@
 #' # smoothing the image using the DEM as covariate
 #' smth.ndvi <- genSmoothingCovIMA(rStack = ex.ndvi.navarre,
 #'                                 cStack = ex.dem.navarre,
-#'                                 Img2Process = c(2,5))
+#'                                 Img2Process = c(2))
 #' # plot the distorted 1, smoothed 1, 
 #' # distorted 5, smoothed 5 images
 #' plot(stack(ex.ndvi.navarre[[2]],
 #'                  smth.ndvi[[1]],
 #'                  ex.ndvi.navarre[[5]],
 #'                  smth.ndvi[[2]]))
+#' }
 genSmoothingCovIMA <- function (rStack,
                              cStack,
                              Img2Process=NULL,
                              nDays=3,
                              nYears=1,
+                             r.dates,
                              fact=5,
                              fun=mean,
                              aFilter=c(.05,.95),
@@ -96,12 +100,20 @@ genSmoothingCovIMA <- function (rStack,
   }
 
   # days in rStack
-  days<-genGetDates(names(rStack))
+  if(!missing(r.dates)){
+    if(length(r.dates)!=nlayers(rStack))stop("dates and rStack must have the same length.")
+    days<-r.dates
+  }else{
+    days<-genGetDates(names(rStack))
+  }
+  
   oday<-order(days)
+  
   if(all(is.na(days))){stop("The name of the layers has to include the date and it must be in julian days (%Y%j) .")}
   # ensure the images order
   rStack<-raster::subset(rStack,oday)
-
+  days<-days[oday]
+  
   # analyse covariates dates
   daysc<-genGetDates(names(cStack))
   ocday<-order(daysc)
@@ -152,6 +164,7 @@ genSmoothingCovIMA <- function (rStack,
     message(paste0("Smoothing image of date ",target.date))
     neighbours<-dateNeighbours(rStack,
                                target.date,
+                               r.dates=days,
                                nPeriods=nDays,
                                nYears=nYears)
 
@@ -161,7 +174,7 @@ genSmoothingCovIMA <- function (rStack,
     meanImage<-raster::calc(neighbours,fun=fun,na.rm=TRUE)
 
     # get target image
-    targetImage<-raster::subset(rStack,which(format(genGetDates(names(rStack)),"%Y%j")%in%format(target.date,"%Y%j")))
+    targetImage<-raster::subset(rStack,which(format(days,"%Y%j")%in%format(target.date,"%Y%j")))
 
     # get covs for target image
     cov.targetImage<-raster::subset(cStack,which(format(genGetDates(names(cStack)),"%Y%j")%in%format(target.date,"%Y%j")))

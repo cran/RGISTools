@@ -100,6 +100,7 @@
 #' lsRemoveMetadata()
 #' }
 ls7Search<-function(AppRoot,verbose=FALSE,precise=FALSE,...){
+  warning("Obsolete function, use lsSearch.")
   arg<-list(...)
   if((!"dates"%in%names(arg))&
      ((!"startDate"%in%names(arg)|(!"endDate"%in%names(arg))))
@@ -203,7 +204,7 @@ ls7Search<-function(AppRoot,verbose=FALSE,precise=FALSE,...){
   if("dates"%in%names(arg)){
     LS7MD<-LS7MD[as.Date(LS7MD$acquisitionDate)%in%arg$dates,]
   }
-  
+  class(LS7MD)<-"ls7res"
   return(LS7MD)
 }
 

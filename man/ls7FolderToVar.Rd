@@ -4,8 +4,15 @@
 \alias{ls7FolderToVar}
 \title{Compute a remote sensing index from a time series of Landsat-7 images}
 \usage{
-ls7FolderToVar(src, fun, AppRoot, getStack = FALSE, overwrite = FALSE,
-  verbose = FALSE, ...)
+ls7FolderToVar(
+  src,
+  fun,
+  AppRoot,
+  getStack = FALSE,
+  overwrite = FALSE,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{src}{the path to the folder with the Landsat-7 multispectral imagery.}
@@ -47,7 +54,8 @@ The function requires the definition of the \code{src} and \code{fun}
 arguments. The \code{src} is usually the path resulting from 
 \code{\link{lsMosaic}}. The \code{fun} argument can be any function from this
 package beginning with “var” (\code{\link{varNDVI}}, \code{\link{varEVI}}, 
-etc.). Custom functions can also be implemented.
+etc.). Custom functions can also be implemented. Caution! It is mandatory to 
+use level-2 products to get accurate derived variables.
 }
 \examples{
 \dontrun{

@@ -5,9 +5,20 @@
 \title{Fill data gaps and smooth outliers in a time series of satellite images using
 covariates}
 \usage{
-genSmoothingCovIMA(rStack, cStack, Img2Process = NULL, nDays = 3,
-  nYears = 1, fact = 5, fun = mean, aFilter = c(0.05, 0.95),
-  snow.mode = FALSE, out.name = "out", ...)
+genSmoothingCovIMA(
+  rStack,
+  cStack,
+  Img2Process = NULL,
+  nDays = 3,
+  nYears = 1,
+  r.dates,
+  fact = 5,
+  fun = mean,
+  aFilter = c(0.05, 0.95),
+  snow.mode = FALSE,
+  out.name = "out",
+  ...
+)
 }
 \arguments{
 \item{rStack}{a \code{RasterStack} class argument containing a time series of
@@ -25,6 +36,8 @@ subsequent days that define the temporal neighborhood.}
 
 \item{nYears}{a \code{numeric} argument with the number of previous and
 subsequent years that define the temporal neighborhood.}
+
+\item{r.dates}{a \code{vector} argument containing the dates of the layers in rstack}
 
 \item{fact}{a \code{numeric} argument with an aggregation factor of the
 anomalies carried out before the interpolation.}
@@ -63,6 +76,7 @@ over the anomaly images. The procedure requires a proper definition of a
 temporal neighbourhood for the target image and aggregation factor.
 }
 \examples{
+\dontrun{
 set.seed(0)
 # load example ndvi and dem data of Navarre
 data(ex.ndvi.navarre)
@@ -85,13 +99,14 @@ genPlotGIS(ex.ndvi.navarre)
 # smoothing the image using the DEM as covariate
 smth.ndvi <- genSmoothingCovIMA(rStack = ex.ndvi.navarre,
                                 cStack = ex.dem.navarre,
-                                Img2Process = c(2,5))
+                                Img2Process = c(2))
 # plot the distorted 1, smoothed 1, 
 # distorted 5, smoothed 5 images
 plot(stack(ex.ndvi.navarre[[2]],
                  smth.ndvi[[1]],
                  ex.ndvi.navarre[[5]],
                  smth.ndvi[[2]]))
+}
 }
 \references{
 \insertRef{militino2018improving}{RGISTools}

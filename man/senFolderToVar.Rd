@@ -4,8 +4,16 @@
 \alias{senFolderToVar}
 \title{Compute a remote sensing index from a time series of Sentinel-2 images}
 \usage{
-senFolderToVar(src, AppRoot, fun, getStack = FALSE, overwrite = FALSE,
-  verbose = FALSE, resbands = c("10m", "20m", "60m"), ...)
+senFolderToVar(
+  src,
+  AppRoot,
+  fun,
+  getStack = FALSE,
+  overwrite = FALSE,
+  verbose = FALSE,
+  resbands = c("10m", "20m", "60m"),
+  ...
+)
 }
 \arguments{
 \item{src}{the path to the folder with the Sentinel-2 multispectral images.}
@@ -53,7 +61,8 @@ arguments. The \code{src} is usually the path resulting from
 this package beginning with “var” (\code{\link{varNDVI}}, 
 \code{\link{varEVI}}, etc.). Custom functions can also be implemented.
 If \code{fun = varRGB}, then the argument \code{getStack} must be equal to
-\code{FALSE} and the red-green-blue (RGB) images must be imported afterwards.
+\code{FALSE} and the red-green-blue (RGB) images must be imported afterwards. 
+Caution! It is mandatory to use level-2 products to get accurate derived variables.
 }
 \examples{
 \dontrun{

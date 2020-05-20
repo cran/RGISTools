@@ -4,16 +4,29 @@
 \alias{genSmoothingIMA}
 \title{Fill data gaps and smooth outliers in a time series of satellite images}
 \usage{
-genSmoothingIMA(rStack, Img2Fill = NULL, nDays = 3, nYears = 1,
-  fact = 5, fun = mean, aFilter = c(0.05, 0.95), factSE = 8,
-  predictSE = FALSE, snow.mode = FALSE, out.name = "outname", ...)
+genSmoothingIMA(
+  rStack,
+  Img2Fill = NULL,
+  nDays = 3,
+  nYears = 1,
+  fact = 5,
+  fun = mean,
+  r.dates,
+  aFilter = c(0.05, 0.95),
+  only.na = FALSE,
+  factSE = 8,
+  predictSE = FALSE,
+  snow.mode = FALSE,
+  out.name = "outname",
+  ...
+)
 }
 \arguments{
 \item{rStack}{a \code{RasterStack} class argument containing a time series of
 satellite images. Layer names should contain the date of the image in
 "\code{YYYYJJJ}" format.}
 
-\item{Img2Fill}{a \code{vector} class argument defining the images to be 
+\item{Img2Fill}{a \code{vector} argument defining the images to be 
 filled/smoothed.}
 
 \item{nDays}{a \code{numeric} argument with the number of previous and 
@@ -28,8 +41,13 @@ anomalies before the interpolation.}
 \item{fun}{a \code{function} used to aggregate the image of anomalies. Both
 \code{mean} (default) or \code{median} are acceptted.}
 
+\item{r.dates}{a \code{vector} argument containing the dates of the layers in rstack}
+
 \item{aFilter}{a \code{vector} with the lower and upper quantiles that define
 the outliers of the anomalies. Ex. c(0.05,0.95).}
+
+\item{only.na}{logical argument. If \code{TRUE} only fills the \code{NA} values. 
+\code{FALSE}  by default.}
 
 \item{factSE}{the \code{fact} used in the standard error prediction.}
 
@@ -64,6 +82,7 @@ procedure requires a proper definition of a temporal neighbourhood for the
 target image and aggregation factor.
 }
 \examples{
+\dontrun{
 # load an example of NDVI time series in Navarre
 data(ex.ndvi.navarre)
 # the 2 images to be filled and the neighbourhood
@@ -71,13 +90,15 @@ genPlotGIS(ex.ndvi.navarre)
 
 # filled images
 tiles.mod.ndvi.filled  <- genSmoothingIMA(ex.ndvi.navarre,
-                               Img2Fill = c(1,2))
+                               Img2Fill = c(1),
+                               only.na=TRUE)
 # show the filled images
 genPlotGIS(tiles.mod.ndvi.filled)
 # plot comparison of the cloud and the filled images
 tiles.mod.ndvi.comp <- stack(ex.ndvi.navarre[[1]], tiles.mod.ndvi.filled[[1]],
                              ex.ndvi.navarre[[2]], tiles.mod.ndvi.filled[[2]])
 genPlotGIS(tiles.mod.ndvi.comp, layout=c(2, 2))
+}
 }
 \references{
 \insertRef{militino2019interpolation}{RGISTools}

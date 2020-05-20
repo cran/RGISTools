@@ -4,8 +4,17 @@
 \alias{senDownload}
 \title{Download Sentinel images from a search list}
 \usage{
-senDownload(searchres, AppRoot, username = NULL, password = NULL,
-  nattempts = 5, unzip = FALSE, overwrite = FALSE, ...)
+senDownload(
+  searchres,
+  AppRoot,
+  username = NULL,
+  password = NULL,
+  nattempts = 5,
+  unzip = FALSE,
+  overwrite = FALSE,
+  omit.md5.error = FALSE,
+  ...
+)
 }
 \arguments{
 \item{searchres}{the output from the \code{\link{senSearch}} function.}
@@ -23,6 +32,9 @@ becomes corrupted.}
 
 \item{overwrite}{logical argument. If \code{TRUE}, overwrites the existing
 images with the same name.}
+
+\item{omit.md5.error}{logical argument. If \code{TRUE}, omits md5 errors and 
+do not removes the downloaded image.}
 
 \item{...}{arguments for nested functions.
  \itemize{

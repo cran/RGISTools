@@ -143,7 +143,8 @@ lsDownload<-function(searchres,
                      nattempts=5,
                      l2rqname,
                      ...){
-  stopifnot(class(searchres)=="data.frame")
+  if(class(searchres)!="ls7res"&&class(searchres)!="ls8res"&&class(searchres)!="lsres"){stop("A response from landsat 7-8 search function is needed.")}
+  class(searchres)<-"data.frame"
   if(is.null(username)|is.null(password)){
     stop("Username and/or password not defined!")
   }

@@ -31,6 +31,8 @@
 #' images with the same name.
 #' @param nattempts the number of attempts to download an image in case it
 #' becomes corrupted.
+#' @param omit.md5.error logical argument. If \code{TRUE}, omits md5 errors and 
+#' do not removes the downloaded image.
 #' @param ... arguments for nested functions.
 #'  \itemize{
 #'        \item \code{dates} a vector with the capturing dates being considered
@@ -83,9 +85,10 @@ senDownload<-function(searchres,
                         nattempts = 5,
                         unzip=FALSE,
                         overwrite=FALSE,
+                        omit.md5.error=FALSE,
                         ...){
   arg<-list(...)
-
+  if(class(searchres)!="senres"){stop("A response from sentinel search function is needed.")}
   if("dates"%in%names(arg)){searchres<-searchres[senGetDates(names(searchres))%in%arg$dates]}
   
   AppRoot<-pathWinLx(AppRoot)
@@ -142,10 +145,16 @@ senDownload<-function(searchres,
       }
       if(!genCheckMD5(downPath,oficial.md5=md5.text,...)){
         message(paste0("Error cheking ",file.name," file md5: ",md5.text))
+        if(omit.md5.error){
+          Sys.sleep(3)
+          next
+        }
         file.remove(downPath)
+        sres<-searchres[i]
+        class(sres)<-"senres"
         senDownload(username=username,
                       password=password,
-                      searchres=searchres[i],
+                      searchres=sres,
                       unzip=unzip,
                       overwrite = overwrite,
                       nattempts=nattempts -1,
@@ -173,15 +182,20 @@ senDownload<-function(searchres,
     }, error = function(e) {
       if(grepl("Operation was aborted",e)){stop(e)}
       message(paste0("ERROR:",e))
-      file.remove(downPath)
-      senDownload(username=username,
+      if(!grepl("HTTP error 403.",e)){
+        Sys.sleep(5)
+        file.remove(downPath)
+        sres<-searchres[i]
+        class(sres)<-"senres"
+        senDownload(username=username,
                     password=password,
-                    searchres=searchres[i],
+                    searchres=sres,
                     unzip=unzip,
                     overwrite = overwrite,
                     nattempts=nattempts -1,
                     AppRoot = AppRoot,
                     ...)
+      }
     }, finally = {
     })
   }

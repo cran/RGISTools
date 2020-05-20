@@ -90,6 +90,7 @@
 #' lsRemoveMetadata()
 #' }
 ls8Search<-function(AppRoot,verbose=FALSE,precise=FALSE,...){
+  warning("Obsolete function, use lsSearch.")
   arg<-list(...)
   if((!"dates"%in%names(arg))&
      ((!"startDate"%in%names(arg)|(!"endDate"%in%names(arg))))
@@ -201,7 +202,7 @@ ls8Search<-function(AppRoot,verbose=FALSE,precise=FALSE,...){
   }
   
   
-  
+  class(LS8MD)<-"ls8res"
   return(LS8MD)
 }
 
